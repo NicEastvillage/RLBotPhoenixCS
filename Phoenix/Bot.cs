@@ -10,7 +10,7 @@ using RedUtils.Math;
  * The run function listed below runs every tick, and should contain the custom strategy code (made by you!)
  * Right now though, it has a default ball chase strategy. Feel free to read up and use anything you like for your own strategy.
 */
-namespace Bot
+namespace Phoenix
 {
     // Your bot class! :D
     public class RedBot : RUBot
@@ -22,7 +22,8 @@ namespace Bot
         public override void Run()
         {
             // Prints out the current action to the screen, so we know what our bot is doing
-            Renderer.Text2D(Action != null ? Action.ToString() : "", new Vec3(10, 10), 4, Color.White);
+            String actionStr = Action != null ? Action.ToString() : ""; 
+            Renderer.Text2D($"{Name}: {actionStr}", new Vec3(30, 400 + 10 * Index), 1, Color.White);
 
             if (IsKickoff && Action == null)
             {

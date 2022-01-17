@@ -1,8 +1,16 @@
-# RedUtilities
+# Phoenix
 
-A set of utitilies for making rocket league bots in C#
+A Rocket League bot made using [RLBot](http://rlbot.org/) and [RedUtils](https://github.com/ItsCodeRed/RedUtils).
+
+This is a remaster of [Phoenix](https://github.com/NicEastvillage/RLBot-Phoenix) made in Kotlin.
 
 ## Usage Instructions
+
+### Play
+
+1. Follow this [guide to setup RLBot](https://youtu.be/oXkbizklI2U).
+1. Add Phoenix to the RLBot GUI using the 'Add Config' or 'Add Folder' options.
+1. Press 'Start Match'!
 
 ### Prerequisites
 Make sure you've installed [.NET SDK 5.0 x64](https://dotnet.microsoft.com/download) or newer,  

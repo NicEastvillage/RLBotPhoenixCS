@@ -129,6 +129,11 @@ namespace RedUtils
 
 			// Finds the nearest surface to the target for some calculations later
 			Surface targetSurface = Field.NearestSurface(Target);
+			
+			// Draws a debug line to represent the target
+			Vec3 renderPos = Field.LimitToNearestSurface(Target) + targetSurface.Normal * 20;
+			bot.Renderer.CrossAngled(renderPos, 60, Color.LimeGreen);
+			bot.Renderer.Line3D(bot.Me.Location, renderPos, Color.White);
 
 			// When no subaction is set, drive normally and look for a subaction
 			if (Action == null)
@@ -206,9 +211,6 @@ namespace RedUtils
 				bot.Controller.Handbrake = (MathF.Abs(angleToTarget) > 2 || (Field.DistanceBetweenPoints(nearestTurnCenter, Target) < turnRadius - 40 && SpeedFromTurnRadius(TurnRadius(bot.Me, Target)) < 400))
 											&& mySurface.Normal.Dot(Vec3.Up) > 0.9f && bot.Me.Velocity.Normalize().Dot(bot.Me.Forward) > 0.9f;
 
-				// Draws a debug line to represent the final target
-				bot.Renderer.Line3D(finalTarget, finalTarget + Field.NearestSurface(finalTarget).Normal * 200, Color.LimeGreen);
-
 				// Estimates where we'll be after dodging
 				Vec3 predictedLocation = bot.Me.LocationAfterDodge();
 				// Estimates how much time we have to dodge
@@ -280,9 +282,6 @@ namespace RedUtils
 					bot.Throttle(TargetSpeed + 500, Backwards);
 				}
 			}
-
-			// Draws a debug line to represent the target
-			bot.Renderer.Line3D(Field.LimitToNearestSurface(Target), Field.LimitToNearestSurface(Target) + targetSurface.Normal * 200, Color.LimeGreen);
 			
 			// Prevents this action from being interrupted during a dodge
 			Interruptible = Action == null || Action.Interruptible;
