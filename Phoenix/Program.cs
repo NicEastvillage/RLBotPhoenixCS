@@ -47,7 +47,7 @@ namespace Phoenix
                 throw;
             }
 
-            RLBotDotNet.BotManager<RedBot> botManager = new RLBotDotNet.BotManager<RedBot>(0);
+            RLBotDotNet.BotManager<PhoenixBot> botManager = new RLBotDotNet.BotManager<PhoenixBot>(0);
             // Start the server on the port given in the first argument
             botManager.Start(port);
         }
