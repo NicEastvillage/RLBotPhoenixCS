@@ -49,7 +49,7 @@ namespace Phoenix
                         else
                         {
                             // Our corner. Only go if we are approoching for the middle
-                            if (shot.Slice.Location.x - Me.Location.x >= 0) shot = null;
+                            if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0) shot = null;
                         }
                     }
                 }
