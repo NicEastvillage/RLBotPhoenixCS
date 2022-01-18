@@ -34,6 +34,7 @@ namespace Phoenix
             {
                 // search for the first avaliable shot using DefaultShotCheck
                 Shot shot = FindShot(DefaultShotCheck, new Target(TheirGoal));
+                IAction alternative = null;
 
                 if (shot != null)
                 {
@@ -50,12 +51,24 @@ namespace Phoenix
                             // Our corner. Only go if we are approoching for the middle
                             if (shot.Slice.Location.x - Me.Location.x >= 0) shot = null;
                         }
-                    }                    
+                    }
+                }
+                
+                if (shot == null)
+                {
+                    if (Ball.Location.y * (-2 * Me.Team + 1) >= 3000)
+                    {
+                        // Ball is far from our goal
+                        if (Me.Boost <= 30)
+                        {
+                            alternative = new GetBoost(Me);
+                        }
+                    }
                 }
 
                 // if a shot is found, go for the shot. Otherwise, if there is an Action to execute, execute it. If none of the others apply, drive back to goal.
-                Action = shot ?? Action ?? new Drive(Me, OurGoal.Location);
-			}
+                Action = shot ?? alternative ?? Action ?? new Drive(Me, OurGoal.Location);
+            }
         }
 
         private void PickKickoffAction()
