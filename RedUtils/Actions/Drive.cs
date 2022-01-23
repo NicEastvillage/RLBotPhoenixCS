@@ -200,7 +200,7 @@ namespace RedUtils
 				{
 					// Otherwise, aim so we have a smooth landing
 					Vec3 landingNormal = Field.FindLandingSurface(bot.Me).Normal;
-					Vec3 targetDirection = Utils.Lerp(Utils.Cap(landingTime * 1.5f - 0.6f, 0, 0.75f), bot.Me.Velocity.FlatNorm(landingNormal), -Vec3.Up);
+					Vec3 targetDirection = Utils.Lerp(Utils.Cap(landingTime * 1.2f - 0.7f, 0, 0.75f), bot.Me.Velocity.FlatNorm(landingNormal), -Vec3.Up);
 					bot.AimAt(bot.Me.Location + targetDirection, landingNormal);
 					angleToTarget = bot.Me.Forward.Angle(targetDirection);
 				}

@@ -16,7 +16,7 @@ namespace RedUtils
 		/// <summary>How much time we spend jumping before dodging, if we start on the ground</summary>
 		public float JumpTime { get; set; }
 		/// <summary>How long this dodge should last</summary>
-		public float Duration { get { return JumpTime + 1.15f; } }
+		public float Duration { get { return JumpTime + 1.5f; } }
 
 		/// <summary>Whether or not we are going to jump before dodging</summary>
 		private bool _jumping = true;
@@ -24,8 +24,10 @@ namespace RedUtils
 		private float _startTime = -1;
 		/// <summary>The inputs for the dodge direction</summary>
 		private Vec3 _input = Vec3.Zero;
-		/// <summary>When we dodge we have to let go of jump for a few frames. This counts those frames/summary>
+		/// <summary>When we dodge we have to let go of jump for a few frames. This counts those frames</summary>
 		private int _step = 0;
+		/// <summary>Whether we started with the wheels towards gravity. If not we reorient earlier</summary>
+		private bool _startedDodgeWithUpAsUp = true;
 
 		/// <summary>Initialize a new dodge action</summary>
 		public Dodge(Vec3 direction)
@@ -97,6 +99,8 @@ namespace RedUtils
 
 					// Sets the input
 					_input = localDirection;
+
+					_startedDodgeWithUpAsUp = bot.Me.Up.Dot(Vec3.Up) > 0.8f;
 				}
 
 				// Dodges in the specified direction
@@ -104,7 +108,7 @@ namespace RedUtils
 				bot.Controller.Pitch = _input[1];
 				bot.Controller.Jump = true;
 			}
-			else
+			else if (elapsed < (_jumping ? JumpTime : 0) + (_startedDodgeWithUpAsUp ? .5f : 0) + 0.6f)
 			{
 				// Finish the action after dodging
 				Finished = true;
