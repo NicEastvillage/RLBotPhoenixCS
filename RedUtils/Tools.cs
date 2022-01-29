@@ -63,7 +63,29 @@ namespace RedUtils
 		/// <param name="target">The final resting place of the ball after we hit it (hopefully)</param>
 		public static Shot FindShot(ShotCheck shotCheck, Target target)
 		{
-			return shotCheck(Ball.Prediction.Find(slice => shotCheck(slice, target) != null), target);
+			return FindShot(shotCheck, new List<Target> { target });
+		}
+		
+		/// <summary>Searches through the ball prediction for the first valid shot given by the ShotCheck</summary>
+		/// <param name="shotCheck">The function that determines which shot to go for, if any</param>
+		/// <param name="targets">The final resting place of the ball after we hit it (hopefully)</param>
+		public static Shot FindShot(ShotCheck shotCheck, IEnumerable<Target> targets)
+		{
+			if (Ball.Prediction.Length > 0)
+			{
+				for (int i = 4; i < Ball.Prediction.Length; i += 4)
+				{
+					if (MathF.Abs(Ball.Prediction[i].Location.y) > 5250) break;
+
+					foreach (Target target in targets)
+					{
+						Shot shot = shotCheck(Ball.Prediction[i], target);
+						if (shot != null) return shot;
+					}
+				}
+			}
+
+			return null;
 		}
 
 		/// <summary>The default shot check. Will go for pretty much anything it can</summary>
@@ -89,6 +111,49 @@ namespace RedUtils
 					{
 						return aerialShot; // If so, go for it!
 					}
+
+					// If we can't aerial, let's try a ground shot
+					GroundShot groundShot = new GroundShot(Me, slice, shotTarget);
+					if (groundShot.IsValid(Me))
+					{
+						return groundShot;
+					}
+
+					// Otherwise, we'll try a jump shot
+					JumpShot jumpShot = new JumpShot(Me, slice, shotTarget);
+					if (jumpShot.IsValid(Me))
+					{
+						return jumpShot;
+					}
+
+					// And lastly, a double jump shot
+					DoubleJumpShot doubleJumpShot = new DoubleJumpShot(Me, slice, shotTarget);
+					if (doubleJumpShot.IsValid(Me))
+					{
+						return doubleJumpShot;
+					}
+				}
+			}
+
+			return null; // if none of those work, we'll just return null (meaning no shot was found)
+		}
+		
+		/// <summary>The default shot check. Will go for pretty much anything it can except aerials</summary>
+		/// <param name="slice">The future moment of the ball we are aiming to hit</param>
+		/// <param name="target">The final resting place of the ball after we hit it (hopefully)</param>
+		public Shot NoAerialsShotCheck(BallSlice slice, Target target)
+		{
+			if (slice != null) // Check if the slice even exists
+			{
+				float timeRemaining = slice.Time - Game.Time;
+
+				// Check first if the slice is in the future and if it's even possible to shoot at our target
+				if (timeRemaining > 0 && target.Fits(slice.Location))
+				{
+					Ball ballAfterHit = slice.ToBall();
+					Vec3 carFinVel = ((slice.Location - Me.Location) / timeRemaining).Cap(0, Car.MaxSpeed);
+					ballAfterHit.velocity = carFinVel + slice.Velocity.Flatten(carFinVel.Normalize()) * 0.8f;
+					Vec3 shotTarget = target.Clamp(ballAfterHit);
 
 					// If we can't aerial, let's try a ground shot
 					GroundShot groundShot = new GroundShot(Me, slice, shotTarget);

@@ -70,5 +70,18 @@ namespace RedUtils
 
             return null;
         }
+
+        public BallSlice AtTime(float time)
+        {
+            if (Length == 0) return null;
+            
+            BallSlice first = Slices[0];
+
+            float delta = time - first.Time;
+
+            if (delta < 0 || 6 <= delta) return null;
+
+            return Slices[Utils.Cap((int)(360 * delta / 6f), 0, Length - 1)];
+        }
     }
 }

@@ -23,7 +23,7 @@ namespace RedUtils
 		/// <summary>All cars on the orange team, NOT including cars that are respawning</summary>
 		public static List<Car> LivingOrangeCars { get { return AllCars.FindAll(car => !car.IsDemolished && car.Team == 1); } }
 
-		/// <summary>Initliazes the list of cars with data from the packet</summary>
+		/// <summary>Initializes the list of cars with data from the packet</summary>
 		public static void Initialize(GameTickPacket packet)
 		{
 			AllCars = new List<Car>();
