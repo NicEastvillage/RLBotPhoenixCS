@@ -98,7 +98,7 @@ namespace Phoenix
                 .OrderBy(car => car.Location.Length() + MathF.Sign(car.Location.x * Field.Side(car.Team)))
                 .First();
 
-            Action = kicker == Me ? new Kickoff() : new GetBoost(Me, false); // if we aren't going for the kickoff, get boost
+            Action = kicker == Me ? new Kickoff() : new GetBoost(Me, interruptible: false); // if we aren't going for the kickoff, get boost
         }
 
         private List<Target> WallReflectTargets()

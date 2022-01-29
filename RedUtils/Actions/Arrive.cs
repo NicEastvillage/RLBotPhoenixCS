@@ -87,20 +87,20 @@ namespace RedUtils
 			RecoveryTime = 0;
 		}
 
-		/// <summary>Initializes a new arrival action, wwhich has a specific time of arrival, and a direction to face at arrival</summary>
-		/// <param name="direction">The direction the car will try to face at the time of arrival</param>
-		/// <param name="allowDodges">Whether or not we are going to allow dodges to increase speed</param>
-		/// <param name="recoveryTime">How much time we should give the car to recover before arriving</param>
-		public Arrive(Car car, Vec3 target, Vec3 direction, float arrivalTime, bool allowFlipping, float recoveryTime)
+		/// <summary>Initializes a new arrival action.</summary>
+		/// <param name="direction">The direction the car will try to face at the time of arrival. If null, any direction is allowed.</param>
+		/// <param name="arrivalTime">The specific time of arrival. If negative, it will not be a specific time and we will not waste boost getting there.</param>
+		/// <param name="allowFlipping">Whether or not we are going to allow dodges to increase speed</param>
+		public Arrive(Car car, Vec3 target, Vec3? direction = null, float arrivalTime = -1f, bool allowFlipping = true, float recoveryTime = 0f)
 		{
 			Interruptible = true;
 			Finished = false;
 
 			Target = target;
-			Direction = direction;
+			Direction = direction ?? Vec3.Zero;
 			ArrivalTime = arrivalTime;
 			AllowFlipping = allowFlipping;
-			Drive = new Drive(car, Target, Car.MaxSpeed, AllowFlipping, true);
+			Drive = new Drive(car, Target, Car.MaxSpeed, AllowFlipping, arrivalTime >= 0f);
 			RecoveryTime = recoveryTime;
 		}
 
