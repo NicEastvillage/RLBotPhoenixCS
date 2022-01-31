@@ -39,7 +39,7 @@ namespace RedUtils
             float distToTarget = bot.Me.Location.Dist(FinalDestination);
 
             _tick++;
-            if (_tick >= 8 || ChosenBoost.TimeUntilActive >= 2.8f)
+            if (_tick >= 8 || (ChosenBoost != null && ChosenBoost.TimeUntilActive >= 2.8f))
             {
                 _tick = 0;
 
