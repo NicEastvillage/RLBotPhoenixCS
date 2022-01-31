@@ -98,7 +98,7 @@ namespace RedUtils
 				bot.Controller.Pitch = _input[1];
 				bot.Controller.Jump = true;
 			}
-			else if (elapsed < (_jumping ? JumpTime : 0) + (_startedDodgeWithUpAsUp ? .5f : 0) + 0.6f)
+			else if (elapsed > (_jumping ? JumpTime : 0) + (_startedDodgeWithUpAsUp ? .3f : 0) + 0.6f)
 			{
 				// Finish the action after dodging
 				Finished = true;
