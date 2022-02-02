@@ -135,7 +135,7 @@ namespace Phoenix
                 .First();
 
             Action = kicker == Me
-                ? new Kickoff()
+                ? new Kickoff(Me)
                 : new GetBoost(Me, interruptible: false); // if we aren't going for the kickoff, get boost
         }
 
