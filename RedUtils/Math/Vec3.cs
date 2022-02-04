@@ -109,6 +109,16 @@ namespace RedUtils.Math
 		}
 		#endregion
 
+		#region setters
+		/// <summary>Returns a Vec3 with the same y and z but a different x</summary>
+		public Vec3 WithX(float x) => new Vec3(x, y, z);
+		/// <summary>Returns a Vec3 with the same x and z but a different y</summary>
+		public Vec3 WithY(float y) => new Vec3(x, y, z);
+		/// <summary>Returns a Vec3 with the same x and y but a different z</summary>
+		public Vec3 WithZ(float z) => new Vec3(x, y, z);
+
+		#endregion
+
 		#region Arithimatic Operations
 		public static Vec3 operator +(Vec3 v1, Vec3 v2)
 		{
