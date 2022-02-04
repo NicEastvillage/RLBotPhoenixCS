@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Drawing;
 using System.Linq;
 using RedUtils;
@@ -27,6 +26,7 @@ namespace Phoenix
         public override void Run()
         {
             //GameAnalysis.Update(this);
+            //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
 
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";

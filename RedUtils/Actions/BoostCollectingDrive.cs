@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Linq;
 using RedUtils.Math;
 using RLBotDotNet;
@@ -15,9 +16,12 @@ namespace RedUtils
 
         /// <summary>The boost pad we are going to grab next</summary>
         public Boost ChosenBoost;
+        
+        /// <summary>The boost pad we are going to grab after the next</summary>
+        public Boost ChosenBoost2;
 
         /// <summary>This action's drive subaction</summary>
-        public Drive DriveAction;
+        public Arrive ArriveAction;
 
         public readonly Vec3 FinalDestination;
 
@@ -31,7 +35,7 @@ namespace RedUtils
             FinalDestination = finalDestination;
             _initiallyInterruptible = interruptible;
 
-            DriveAction = new Drive(car, finalDestination);
+            ArriveAction = new Arrive(car, finalDestination);
         }
 
         public void Run(RUBot bot)
@@ -39,7 +43,7 @@ namespace RedUtils
             float distToTarget = bot.Me.Location.Dist(FinalDestination);
 
             _tick++;
-            if (_tick >= 8 || (ChosenBoost != null && ChosenBoost.TimeUntilActive >= 2.8f))
+            if (_tick >= 20 || (ChosenBoost != null && ChosenBoost.TimeUntilActive >= 2.8f))
             {
                 _tick = 0;
 
@@ -52,18 +56,39 @@ namespace RedUtils
                     })
                     .OrderBy(boost => 1.25f * boost.Location.Dist(bot.Me.Location) +
                                       1.0f * boost.Location.Dist(FinalDestination) +
-                                      0.8f * MathF.Abs(bot.Me.Right.Dot(boost.Location)))
+                                      0.75f * MathF.Abs(bot.Me.Right.Dot(boost.Location - bot.Me.Location)))
                     .FirstOrDefault();
 
-                // Update Drive subaction
-                DriveAction.Target = ChosenBoost?.Location ?? FinalDestination;
-                DriveAction.WasteBoost = bot.Me.Velocity.Length() < 400;
+                if (ChosenBoost == null) ChosenBoost2 = null;
+                else
+                {
+                    ChosenBoost2 = Field.Boosts.FindAll(boost =>
+                        {
+                            float boostToBoostDist = boost.Location.Dist(ChosenBoost.Location);
+                            return boost != ChosenBoost && (boost.IsActive || (ChosenBoost.Location.Dist(bot.Me.Location) + boostToBoostDist) / boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
+                                   boostToBoostDist + boost.Location.Dist(FinalDestination) < 1.25f * distToTarget;
+                        })
+                        .OrderBy(boost => 1.25f * boost.Location.Dist(ChosenBoost.Location) +
+                                          1.0f * boost.Location.Dist(FinalDestination) +
+                                          1.0f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination).Rotate(MathF.PI / 2f).Dot(boost.Location - bot.Me.Location)))
+                        .FirstOrDefault();
+                }
+
+                // Update Drive sub action
+                ArriveAction.Target = ChosenBoost?.Location ?? FinalDestination;
+                ArriveAction.Direction = ChosenBoost2 != null ?
+                    Utils.Lerp(0.5f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location)).FlatNorm() :
+                    Utils.Lerp(0.5f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
+                ArriveAction.Drive.WasteBoost = bot.Me.Velocity.Length() < 500 || distToTarget > 2500f;
             }
 
-            DriveAction.Run(bot);
+            if (ChosenBoost != null) bot.Renderer.Line3D(bot.Me.Location, ChosenBoost.Location.WithZ(20f), Color.GreenYellow);
+            if (ChosenBoost != null && ChosenBoost2 != null) bot.Renderer.Line3D(ChosenBoost.Location.WithZ(20f), ChosenBoost2.Location.WithZ(20f), Color.GreenYellow);
+            
+            ArriveAction.Run(bot);
 
-            Interruptible = _initiallyInterruptible && DriveAction.Interruptible;
-            Finished = bot.Me.Boost > 65;
+            Interruptible = _initiallyInterruptible && ArriveAction.Interruptible;
+            Finished = bot.Me.Boost > 65 || bot.Me.Location.Dist(FinalDestination) < 100;
         }
     }
 }
