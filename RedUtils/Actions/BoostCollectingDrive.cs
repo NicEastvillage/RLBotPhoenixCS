@@ -88,8 +88,8 @@ namespace RedUtils
                 // Update Drive sub action
                 ArriveAction.Target = ChosenBoost?.Location ?? FinalDestination;
                 ArriveAction.Direction = ChosenBoost2 != null
-                    ? Utils.Lerp(0.6f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location)).FlatNorm()
-                    : Utils.Lerp(0.6f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
+                    ? Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location - 200 * ChosenBoost2.Location.Direction(FinalDestination))).FlatNorm()
+                    : Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
                 ArriveAction.Drive.WasteBoost = bot.Me.Velocity.Length() < 500 || distToTarget > 2500f;
             }
 

@@ -275,7 +275,7 @@ namespace RedUtils
 			float tau2 = timeRemaining - (timeRemaining - tau1) * MathF.Sqrt(1 - Utils.Cap(ratio, 0, 1));
 			Vec3 velocityEstimate = finVel + (Car.BoostAccel + Car.AirThrottleAccel) * (tau2 - tau1) * direction;
 			float boostEstimate = (tau2 - tau1) * Car.BoostConsumption;
-			bool enoughBoost = boostEstimate < car.Boost * 0.9f;
+			bool enoughBoost = boostEstimate < car.Boost * 0.85f;
 			bool enoughTime = MathF.Abs(ratio) < 0.9f;
 
 			return (velocityEstimate.Length() < Car.MaxSpeed * 0.9f && enoughBoost && enoughTime) ? boostEstimate : -1;

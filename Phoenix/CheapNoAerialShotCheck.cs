@@ -9,7 +9,7 @@ namespace Phoenix
 
         private static int _shotTypeIndex = 0;
         
-        private const int ShotTypeCount = 3;
+        private const int ShotTypeCount = 4;
 
         public static void Next(Car car)
         {
@@ -55,11 +55,20 @@ namespace Phoenix
                             break;
                         
                         case 2:
-                            // And lastly, a double jump shot
+                            // How about a double jump shot
                             DoubleJumpShot doubleJumpShot = new DoubleJumpShot(Me, slice, shotTarget);
                             if (doubleJumpShot.IsValid(Me))
                             {
                                 return doubleJumpShot;
+                            }
+                            break;
+                        case 3:
+                            if (Me.Boost <= 20) break;
+                            // And lastly, an aerial shot
+                            AerialShot aerial = new AerialShot(Me, slice, shotTarget);
+                            if (aerial.IsValid(Me))
+                            {
+                                return aerial;
                             }
                             break;
                     }
