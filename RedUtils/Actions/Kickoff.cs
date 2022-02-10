@@ -74,7 +74,7 @@ namespace RedUtils
 					_fakeDrive.Run(bot);
 					Finished = Game.Time > _fakeBeginTime + 2.7f;
 				}
-				else if (Game.Time < _fakeBeginTime + 0.6f)
+				else if (Game.Time < _fakeBeginTime + 0.8f)
 				{
 					// Creep backwards
 					bot.Controller.Throttle = -1f;
