@@ -90,7 +90,7 @@ namespace RedUtils
                 ArriveAction.Direction = ChosenBoost2 != null
                     ? Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location - 200 * ChosenBoost2.Location.Direction(FinalDestination))).FlatNorm()
                     : Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
-                ArriveAction.Drive.WasteBoost = bot.Me.Velocity.Length() < 500 || distToTarget > 2500f;
+                ArriveAction.Drive.WasteBoost = bot.Me.Velocity.Length() < MathF.Min(distToTarget / 4, 1400);
             }
 
             if (ChosenBoost != null)
