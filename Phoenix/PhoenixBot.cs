@@ -27,6 +27,7 @@ namespace Phoenix
         {
             //GameAnalysis.Update(this);
             //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
+            //WallReflectTargets();
 
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";
@@ -39,7 +40,7 @@ namespace Phoenix
             else if (Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible))
             {
                 Shot shot;
-                // search for the first avaliable shot using NoAerialsShotCheck
+                // search for the first available shot using NoAerialsShotCheck
                 CheapNoAerialShotCheck.Next(Me);
                 Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, new Target(TheirGoal));
                 Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargets());
@@ -141,23 +142,38 @@ namespace Phoenix
 
         private List<Target> WallReflectTargets()
         {
-            BallSlice slice = Ball.Prediction.AtTime(Game.Time + 0.5f);
-            List<Target> targets = new List<Target>();
+            float naiveTime = Drive.GetEta(Me, Ball.Location);
+            BallSlice naiveSlice = Ball.Prediction.AtTime(Game.Time + naiveTime) ?? BallSlice.Now();
+            float betterNaiveTime = Drive.GetEta(Me, naiveSlice.Location);
+            BallSlice slice = Ball.Prediction.AtTime(Game.Time + betterNaiveTime) ?? BallSlice.Now();
+            float ballToGoalDist = slice.Location.Dist(TheirGoal.Location);
+
+            const float MIN_Z = 190;
+            const float MAX_Z = 1800;
+            float targetWidth = Utils.Lerp(ballToGoalDist / 5000, 0, 400);
             
-            if (slice == null) return targets;
+            List<Target> targets = new List<Target>();
 
             List<(Vec3, Vec3, Vec3)> reflectWalls = new List<(Vec3, Vec3, Vec3)>
             {
-                (Field.Side(Team) * Vec3.X, new Vec3(-Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 3000),
+                (Field.Side(Team) * Vec3.X,
+                    new Vec3(-Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000),
                     new Vec3(-Field.Side(Team) * Field.Width / 2, 3700)), // Left wall
-                (-Field.Side(Team) * Vec3.X, new Vec3(Field.Side(Team) * Field.Width / 2, 3700),
-                    new Vec3(Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 3000)), // Right wall
+                (-Field.Side(Team) * Vec3.X,
+                    new Vec3(Field.Side(Team) * Field.Width / 2, 3700),
+                    new Vec3(Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000)), // Right wall
                 (new Vec3(Field.Side(Team), Field.Side(Team)).Normalize(),
                     new Vec3(-Field.Side(Team) * 3900, -Field.Side(Team) * 4164),
-                    new Vec3(-Field.Side(Team) * 3200, -Field.Side(Team) * 4864)), // Left corner wall
+                    new Vec3(-Field.Side(Team) * 3200, -Field.Side(Team) * 4864)), // Enemy left corner wall
                 (new Vec3(-Field.Side(Team), Field.Side(Team)).Normalize(),
                     new Vec3(Field.Side(Team) * 3200, -Field.Side(Team) * 4864),
-                    new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Right corner wall
+                    new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Enemy right corner wall
+                (new Vec3(Field.Side(Team), -Field.Side(Team)).Normalize(),
+                    new Vec3(-Field.Side(Team) * 3200, Field.Side(Team) * 4864),
+                    new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall
+                (new Vec3(-Field.Side(Team), -Field.Side(Team)).Normalize(),
+                    new Vec3(Field.Side(Team) * 3900, Field.Side(Team) * 4164),
+                    new Vec3(Field.Side(Team) * 3200, Field.Side(Team) * 4864)), // Our right corner wall
             };
 
             foreach (var (normal, a, b) in reflectWalls)
@@ -174,28 +190,28 @@ namespace Phoenix
                 float reflectT = (slice.Location - a).Dot(a2B);
 
                 Target target = new Target(
-                    reflectPoint - a2B * 200 + Vec3.Z * 1800,
-                    reflectPoint + a2B * 200 + Vec3.Z * 190
+                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetWidth + Vec3.Z * MIN_Z
                 );
 
-                if (reflectT < 0 || a.Dist(b) < reflectT || slice.Location.FlatDist(reflectPoint) > 2500) continue;
+                if (reflectT < 0 || a.Dist(b) < reflectT || slice.Location.FlatDist(reflectPoint) > 3000) continue;
 
                 Renderer.Polyline3D(new List<Vec3>
                 {
-                    a + Vec3.Z * 1800,
-                    b + Vec3.Z * 1800,
-                    b + Vec3.Z * 190,
-                    a + Vec3.Z * 190,
-                    a + Vec3.Z * 1800,
+                    a + Vec3.Z * MAX_Z,
+                    b + Vec3.Z * MAX_Z,
+                    b + Vec3.Z * MIN_Z,
+                    a + Vec3.Z * MIN_Z,
+                    a + Vec3.Z * MAX_Z,
                 }, Color.Yellow);
                 Renderer.Line3D(Vec3.Z * 800 + (a + b) / 2, Vec3.Z * 800 + (a + b) / 2 + normal * 100, Color.Yellow);
                 Renderer.Polyline3D(new List<Vec3>
                 {
-                    reflectPoint - a2B * 200 + Vec3.Z * 1800,
-                    reflectPoint + a2B * 200 + Vec3.Z * 1800,
-                    reflectPoint + a2B * 200 + Vec3.Z * 190,
-                    reflectPoint - a2B * 200 + Vec3.Z * 190,
-                    reflectPoint - a2B * 200 + Vec3.Z * 1800,
+                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetWidth + Vec3.Z * MIN_Z,
+                    reflectPoint - a2B * targetWidth + Vec3.Z * MIN_Z,
+                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
                 }, Color.Azure);
                 Renderer.Line3D(slice.Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);
                 Renderer.Line3D(Field.Goals[1 - Me.Team].Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);

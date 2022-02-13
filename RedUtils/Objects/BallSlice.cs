@@ -24,10 +24,26 @@ namespace RedUtils
 			Time = slice.GameSeconds;
 		}
 
+		public BallSlice(Vec3 location, Vec3 velocity, Vec3 angularVelocity, float time)
+		{
+			Location = location;
+			Velocity = velocity;
+			AngularVelocity = angularVelocity;
+			Time = time;
+		}
+
 		/// <summary>Converts this ball slice to a ball</summary>
 		public Ball ToBall()
 		{
 			return new Ball(Location, Velocity, AngularVelocity);
+		}
+		
+		
+		/// <summary>Initializes a new ball slice from the current situation.
+		/// Useful if the Ball prediction is not available.</summary>
+		public static BallSlice Now()
+		{
+			return new BallSlice(Ball.Location, Ball.Velocity, Ball.AngularVelocity, Game.Time);
 		}
 	}
 }
