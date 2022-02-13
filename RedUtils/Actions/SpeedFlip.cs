@@ -42,7 +42,7 @@ namespace RedUtils
 			if (_startTime < 0)
 			{
 				// During the first frame, calculate the angle we need to turn before dodging
-				float angle = 0.09f * bot.Me.Velocity.Dot(bot.Me.Forward) / Drive.TurnRadius(bot.Me.Velocity.Dot(bot.Me.Forward));
+				float angle = 0.08f * bot.Me.Velocity.Dot(bot.Me.Forward) / Drive.TurnRadius(bot.Me.Velocity.Dot(bot.Me.Forward));
 				// Generate a left and right vector rotated by that angle for us to aim at
 				Vec3 leftVec = Direction.Rotate(angle).Flatten().Normalize();
 				Vec3 rightVec = Direction.Rotate(-angle).Flatten().Normalize();
@@ -88,13 +88,13 @@ namespace RedUtils
 					bot.Controller.Pitch = -1;
 					bot.Controller.Roll = _side;
 				}
-				else if (.15 < elapsed && elapsed < .65)
+				else if (.15 < elapsed && elapsed < .75)
 				{
 					// Cancel the forward part of the dodge, and continue air rolling
 					bot.Controller.Pitch = 1;
 					bot.Controller.Roll = _side;
 				}
-				else if (.65 < elapsed && elapsed < 0.9)
+				else if (.75 < elapsed && elapsed < 0.9)
 				{
 					// Land safely on the ground by turning slightly and holding drift
 					bot.Controller.Pitch = 1;

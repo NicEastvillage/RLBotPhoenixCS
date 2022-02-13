@@ -47,7 +47,15 @@ namespace RedUtils
             {
                 _tick = 0;
 
-                var prevBoost1 = ChosenBoost;
+                if (bot.Me.Velocity.Dot(bot.Me.Location.Direction(FinalDestination)) < 400)
+                {
+                    // Some speed towards the final destination is required before we consider picking up boosts
+                    ChosenBoost = null;
+                    ChosenBoost2 = null;
+                }
+                else
+                {
+                    var prevBoost1 = ChosenBoost;
                 var prevBoost2 = ChosenBoost2;
 
                 // Repick boost
@@ -83,6 +91,7 @@ namespace RedUtils
                             1.0f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination)
                                 .Rotate(MathF.PI / 2f).Dot(boost.Location - bot.Me.Location))))
                         .FirstOrDefault();
+                }
                 }
 
                 // Update Drive sub action

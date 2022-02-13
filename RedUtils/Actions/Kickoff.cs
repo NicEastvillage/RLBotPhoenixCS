@@ -114,7 +114,10 @@ namespace RedUtils
 				{
 					// When we are moving fast enough, start speed flipping
 					_speedFlipped = true;
-					_speedFlip = new SpeedFlip(bot.Me.Location.Direction(Ball.Location - Ball.Location.Direction(bot.TheirGoal.Location) * (160 + _rand2 * 30)));
+					Vec3 sideWaysOffset = _type == KickOffType.Diagoal
+						? Vec3.X * MathF.Sign(-bot.Me.Location.x) * 250
+						: Vec3.Zero;
+					_speedFlip = new SpeedFlip(bot.Me.Location.Direction(Ball.Location - Ball.Location.Direction(bot.TheirGoal.Location) * (160 + _rand2 * 30) + sideWaysOffset));
 				}
 				else if (bot.Me.Location.Dist(Ball.Location) < 800 && bot.Me.IsGrounded)
 				{
