@@ -27,7 +27,7 @@ namespace Phoenix
         {
             //GameAnalysis.Update(this);
             //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
-            //WallReflectTargets();
+            WallReflectTargets();
 
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";
@@ -42,7 +42,10 @@ namespace Phoenix
                 Shot shot;
                 // search for the first available shot using NoAerialsShotCheck
                 CheapNoAerialShotCheck.Next(Me);
-                Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, new Target(TheirGoal));
+                List<Target> goalTargets = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
+                    ? new List<Target> { new(OurGoal, true), new(TheirGoal) }
+                    : new List<Target> { new(TheirGoal) };
+                Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargets);
                 Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargets());
 
                 if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.08 < directShot.Slice.Time)
@@ -169,11 +172,11 @@ namespace Phoenix
                     new Vec3(Field.Side(Team) * 3200, -Field.Side(Team) * 4864),
                     new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Enemy right corner wall
                 (new Vec3(Field.Side(Team), -Field.Side(Team)).Normalize(),
-                    new Vec3(-Field.Side(Team) * 3200, Field.Side(Team) * 4864),
-                    new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall
+                    new Vec3(-Field.Side(Team) * 1500, Field.Side(Team) * 6564),
+                    new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall, artificially extended for better clears
                 (new Vec3(-Field.Side(Team), -Field.Side(Team)).Normalize(),
                     new Vec3(Field.Side(Team) * 3900, Field.Side(Team) * 4164),
-                    new Vec3(Field.Side(Team) * 3200, Field.Side(Team) * 4864)), // Our right corner wall
+                    new Vec3(Field.Side(Team) * 1500, Field.Side(Team) * 6564)), // Our right corner wall, artificially extended for better clears
             };
 
             foreach (var (normal, a, b) in reflectWalls)

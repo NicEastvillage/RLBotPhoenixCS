@@ -64,6 +64,7 @@ namespace Phoenix
                             break;
                         case 3:
                             if (Me.Boost <= 20) break;
+                            if (slice.Location.z < 500) break;
                             // And lastly, an aerial shot
                             AerialShot aerial = new AerialShot(Me, slice, shotTarget);
                             if (aerial.IsValid(Me))

@@ -79,7 +79,7 @@ namespace RedUtils
 					// Creep backwards
 					bot.Controller.Throttle = -1f;
 				}
-				else if (Game.Time > _fakeBeginTime + 1.8f)
+				else if (Game.Time > _fakeBeginTime + 2.1f)
 				{
 					// Begin driving forwards
 					_fakeDrive = new Drive(bot.Me, Vec3.Zero, 1400, false);

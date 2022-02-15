@@ -20,6 +20,12 @@ namespace RedUtils
         /// <summary>The boost pad we are going to grab after the next</summary>
         public Boost ChosenBoost2;
 
+        /// <summary>The location of ChosenBoost, but shifted a bit to make the driving smoother</summary>
+        private Vec3 LoosenedLocation;
+        
+        /// <summary>The location of ChosenBoost2, but shifted a bit to make the driving smoother</summary>
+        private Vec3 LoosenedLocation2;
+
         /// <summary>This action's drive subaction</summary>
         public Arrive ArriveAction;
 
