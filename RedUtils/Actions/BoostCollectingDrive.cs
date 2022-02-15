@@ -22,9 +22,6 @@ namespace RedUtils
 
         /// <summary>The location of ChosenBoost, but shifted a bit to make the driving smoother</summary>
         private Vec3 LoosenedLocation;
-        
-        /// <summary>The location of ChosenBoost2, but shifted a bit to make the driving smoother</summary>
-        private Vec3 LoosenedLocation2;
 
         /// <summary>This action's drive subaction</summary>
         public Arrive ArriveAction;
@@ -52,6 +49,9 @@ namespace RedUtils
             if (_tick >= 20 || (ChosenBoost != null && ChosenBoost.TimeUntilActive >= 2.8f))
             {
                 _tick = 0;
+                
+                var prevBoost1 = ChosenBoost;
+                var prevBoost2 = ChosenBoost2;
 
                 if (bot.Me.Velocity.Dot(bot.Me.Location.Direction(FinalDestination)) < 400)
                 {
@@ -61,57 +61,71 @@ namespace RedUtils
                 }
                 else
                 {
-                    var prevBoost1 = ChosenBoost;
-                var prevBoost2 = ChosenBoost2;
-
-                // Repick boost
-                ChosenBoost = Field.Boosts.FindAll(boost =>
-                    {
-                        float distToBoost = boost.Location.Dist(bot.Me.Location);
-                        return (boost.IsActive || distToBoost / boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
-                               distToBoost + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
-                               boost.Location.Dist(FinalDestination) < distToTarget - 100;
-                    })
-                    .OrderBy(boost => (boost == prevBoost1 ? 0.8 : 1.0) * (
-                        1.25f * boost.Location.Dist(bot.Me.Location) +
-                        1.0f * boost.Location.Dist(FinalDestination) +
-                        0.75f * MathF.Abs(bot.Me.Right.Dot(boost.Location - bot.Me.Location))))
-                    .FirstOrDefault();
-
-                if (ChosenBoost == null) ChosenBoost2 = null;
-                else
-                {
-                    ChosenBoost2 = Field.Boosts.FindAll(boost =>
+                    // Repick boost
+                    ChosenBoost = Field.Boosts.FindAll(boost =>
                         {
-                            float boostToBoostDist = boost.Location.Dist(ChosenBoost.Location);
-                            return boost != ChosenBoost &&
-                                   (boost.IsActive ||
-                                    (ChosenBoost.Location.Dist(bot.Me.Location) + boostToBoostDist) /
-                                    boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
-                                   boostToBoostDist + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
+                            float distToBoost = boost.Location.Dist(bot.Me.Location);
+                            return (boost.IsActive || distToBoost / boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
+                                   distToBoost + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
                                    boost.Location.Dist(FinalDestination) < distToTarget - 100;
                         })
-                        .OrderBy(boost => (ChosenBoost == prevBoost1 && boost == prevBoost2 ? 0.9 : 1.0) * (
-                            1.25f * boost.Location.Dist(ChosenBoost.Location) +
+                        .OrderBy(boost => (boost == prevBoost1 ? 0.8 : 1.0) * (
+                            1.25f * boost.Location.Dist(bot.Me.Location) +
                             1.0f * boost.Location.Dist(FinalDestination) +
-                            1.0f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination)
-                                .Rotate(MathF.PI / 2f).Dot(boost.Location - bot.Me.Location))))
+                            0.75f * MathF.Abs(bot.Me.Right.Dot(boost.Location - bot.Me.Location))))
                         .FirstOrDefault();
-                }
+
+                    if (ChosenBoost == null) ChosenBoost2 = null;
+                    else
+                    {
+                        ChosenBoost2 = Field.Boosts.FindAll(boost =>
+                            {
+                                float boostToBoostDist = boost.Location.Dist(ChosenBoost.Location);
+                                return boost != ChosenBoost &&
+                                       (boost.IsActive ||
+                                        (ChosenBoost.Location.Dist(bot.Me.Location) + boostToBoostDist) /
+                                        boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
+                                       boostToBoostDist + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
+                                       boost.Location.Dist(FinalDestination) < distToTarget - 100;
+                            })
+                            .OrderBy(boost => (ChosenBoost == prevBoost1 && boost == prevBoost2 ? 0.9 : 1.0) * (
+                                1.25f * boost.Location.Dist(ChosenBoost.Location) +
+                                1.0f * boost.Location.Dist(FinalDestination) +
+                                1.0f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination)
+                                    .Rotate(MathF.PI / 2f).Dot(boost.Location - bot.Me.Location))))
+                            .FirstOrDefault();
+                    }
                 }
 
                 // Update Drive sub action
-                ArriveAction.Target = ChosenBoost?.Location ?? FinalDestination;
-                ArriveAction.Direction = ChosenBoost2 != null
-                    ? Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location - 200 * ChosenBoost2.Location.Direction(FinalDestination))).FlatNorm()
-                    : Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
+                if (ChosenBoost != prevBoost1 || ChosenBoost2 != prevBoost2)
+                {
+                    if (ChosenBoost == null)
+                    {
+                        LoosenedLocation = FinalDestination;
+                    }
+                    else
+                    {
+                        Vec3 loc2 = ChosenBoost2?.Location ?? FinalDestination;
+                        Vec3 looseDir = ((bot.Me.Location - ChosenBoost.Location) + (loc2 - ChosenBoost.Location)).Normalize();
+                        LoosenedLocation = ChosenBoost.Location + looseDir * 110; // Radius of small pads are 144
+                    }
+                    
+                    ArriveAction.Target = LoosenedLocation;
+                    ArriveAction.Direction = ChosenBoost2 != null
+                        ? Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(ChosenBoost2.Location - 100 * ChosenBoost2.Location.Direction(FinalDestination))).FlatNorm()
+                        : Utils.Lerp(0.9f, bot.Me.Forward, bot.Me.Location.Direction(FinalDestination)).FlatNorm();
+                }
                 ArriveAction.Drive.WasteBoost = bot.Me.Velocity.Length() < MathF.Min(distToTarget / 4, 1400);
             }
 
             if (ChosenBoost != null)
-                bot.Renderer.Line3D(bot.Me.Location, ChosenBoost.Location.WithZ(20f), Color.GreenYellow);
+            {
+                bot.Renderer.Line3D(bot.Me.Location, LoosenedLocation.WithZ(20f), Color.GreenYellow);
+                bot.Renderer.Line3D(LoosenedLocation.WithZ(20f), ChosenBoost.Location.WithZ(20f), Color.Green);
+            }
             if (ChosenBoost != null && ChosenBoost2 != null)
-                bot.Renderer.Line3D(ChosenBoost.Location.WithZ(20f), ChosenBoost2.Location.WithZ(20f),
+                bot.Renderer.Line3D(LoosenedLocation.WithZ(20f), ChosenBoost2.Location.WithZ(20f),
                     Color.GreenYellow);
 
             ArriveAction.Run(bot);
