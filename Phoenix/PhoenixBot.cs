@@ -76,8 +76,10 @@ namespace Phoenix
                         }
                         else
                         {
-                            // Our corner. Only go if we are approoching for the middle
-                            if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0) shot = null;
+                            // Our corner. Only go if we are approaching for the middle or if all enemies are far away
+                            if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0 &&
+                                Cars.AllLivingCars.Any(car => car.Team != Me.Team && car.Location.Dist(OurGoal.Location) < 2500))
+                                shot = null;
                         }
                     }
                 }
@@ -172,11 +174,11 @@ namespace Phoenix
                     new Vec3(Field.Side(Team) * 3200, -Field.Side(Team) * 4864),
                     new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Enemy right corner wall
                 (new Vec3(Field.Side(Team), -Field.Side(Team)).Normalize(),
-                    new Vec3(-Field.Side(Team) * 1500, Field.Side(Team) * 6564),
+                    new Vec3(-Field.Side(Team) * 3200, Field.Side(Team) * 4864),
                     new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall, artificially extended for better clears
                 (new Vec3(-Field.Side(Team), -Field.Side(Team)).Normalize(),
                     new Vec3(Field.Side(Team) * 3900, Field.Side(Team) * 4164),
-                    new Vec3(Field.Side(Team) * 1500, Field.Side(Team) * 6564)), // Our right corner wall, artificially extended for better clears
+                    new Vec3(Field.Side(Team) * 3200, Field.Side(Team) * 4864)), // Our right corner wall, artificially extended for better clears
             };
 
             foreach (var (normal, a, b) in reflectWalls)
