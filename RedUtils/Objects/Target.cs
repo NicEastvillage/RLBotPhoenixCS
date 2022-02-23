@@ -42,9 +42,9 @@ namespace RedUtils
 		{
 			if (shootAwayFromGoal)
 			{
-				// Swap top left and bottom right
-				TopLeft = goal.BottomRightCorner;
-				BottomRight = goal.TopLeftCorner;
+				// Swap top left and bottom right + make the goal wider
+				TopLeft = goal.BottomRightCorner * new Vec3(1.2f, 1f, 1f);
+				BottomRight = goal.TopLeftCorner * new Vec3(1.2f, 1f, 1f);;
 			}
 			else
 			{

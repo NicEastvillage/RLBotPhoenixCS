@@ -66,13 +66,13 @@ namespace RedUtils
                         {
                             float distToBoost = boost.Location.Dist(bot.Me.Location);
                             return (boost.IsActive || distToBoost / boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
-                                   distToBoost + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
+                                   distToBoost + boost.Location.Dist(FinalDestination) < 1.2f * distToTarget &&
                                    boost.Location.Dist(FinalDestination) < distToTarget - 100;
                         })
                         .OrderBy(boost => (boost == prevBoost1 ? 0.8 : 1.0) * (
-                            1.25f * boost.Location.Dist(bot.Me.Location) +
+                            1.2f * boost.Location.Dist(bot.Me.Location) +
                             1.0f * boost.Location.Dist(FinalDestination) +
-                            0.75f * MathF.Abs(bot.Me.Right.Dot(boost.Location - bot.Me.Location))))
+                            1.0f * MathF.Abs(bot.Me.Right.Dot(boost.Location - bot.Me.Location))))
                         .FirstOrDefault();
 
                     if (ChosenBoost == null) ChosenBoost2 = null;
@@ -85,13 +85,13 @@ namespace RedUtils
                                        (boost.IsActive ||
                                         (ChosenBoost.Location.Dist(bot.Me.Location) + boostToBoostDist) /
                                         boost.TimeUntilActive > bot.Me.Velocity.Length()) &&
-                                       boostToBoostDist + boost.Location.Dist(FinalDestination) < 1.3f * distToTarget &&
+                                       boostToBoostDist + boost.Location.Dist(FinalDestination) < 1.2f * distToTarget &&
                                        boost.Location.Dist(FinalDestination) < distToTarget - 100;
                             })
                             .OrderBy(boost => (ChosenBoost == prevBoost1 && boost == prevBoost2 ? 0.9 : 1.0) * (
-                                1.25f * boost.Location.Dist(ChosenBoost.Location) +
+                                1.2f * boost.Location.Dist(ChosenBoost.Location) +
                                 1.0f * boost.Location.Dist(FinalDestination) +
-                                1.0f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination)
+                                1.1f * MathF.Abs(ChosenBoost.Location.Direction(FinalDestination)
                                     .Rotate(MathF.PI / 2f).Dot(boost.Location - bot.Me.Location))))
                             .FirstOrDefault();
                     }

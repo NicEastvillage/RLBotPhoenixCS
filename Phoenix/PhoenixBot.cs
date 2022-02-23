@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using RedUtils;
+using RedUtils.Actions.KickOffs;
 using RedUtils.Math;
 
 /* 
@@ -17,6 +18,8 @@ namespace Phoenix
     // Your bot class! :D
     public class PhoenixBot : RUBot
     {
+        private KickOffPicker _kickOffPicker = new KickOffPicker();
+        
         // We want the constructor for our Bot to extend from RUBot, but feel free to add some other initialization in here as well.
         public PhoenixBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
         {
@@ -28,6 +31,8 @@ namespace Phoenix
             //GameAnalysis.Update(this);
             //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
             WallReflectTargets();
+            _kickOffPicker.Evaluate(this);
+            //_kickOffPicker.DrawSummary(Renderer);
 
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";
@@ -35,7 +40,7 @@ namespace Phoenix
 
             if (IsKickoff && Action == null)
             {
-                PickKickoffAction();
+                Action = _kickOffPicker.PickKickOffAction(this);
             }
             else if (Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible))
             {
@@ -48,7 +53,7 @@ namespace Phoenix
                 Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargets);
                 Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargets());
 
-                if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.08 < directShot.Slice.Time)
+                if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.04 < directShot.Slice.Time)
                 {
                     // Early reflect shot is possible
                     shot = reflectShot;
@@ -85,7 +90,7 @@ namespace Phoenix
                 }
                 
                 IAction alternative = Action is BoostCollectingDrive ? Action : null;
-                Vec3 shadowLocation = (Ball.Location + OurGoal.Location) / 2f;
+                Vec3 shadowLocation = Utils.Lerp(0.35f, Ball.Location, OurGoal.Location);
                 bool onOurSideOfShadowLocation = (shadowLocation.y - Me.Location.y) * Field.Side(Me.Team) >= 0;
                 
                 if (shot == null && alternative == null)
@@ -132,19 +137,6 @@ namespace Phoenix
             }
         }
 
-        private void PickKickoffAction()
-        {
-            // Use left-goes protocol
-            Car kicker = Cars.AllCars
-                .FindAll(car => car.Team == Me.Team)
-                .OrderBy(car => car.Location.Length() + MathF.Sign(car.Location.x * Field.Side(car.Team)))
-                .First();
-
-            Action = kicker == Me
-                ? new Kickoff(Me)
-                : new GetBoost(Me, interruptible: false); // if we aren't going for the kickoff, get boost
-        }
-
         private List<Target> WallReflectTargets()
         {
             float naiveTime = Drive.GetEta(Me, Ball.Location);
@@ -155,7 +147,7 @@ namespace Phoenix
 
             const float MIN_Z = 190;
             const float MAX_Z = 1800;
-            float targetWidth = Utils.Lerp(ballToGoalDist / 5000, 0, 400);
+            float targetSemiWidth = MathF.Max(Utils.Lerp(ballToGoalDist / 5500 - 1.5f * MathF.Abs(slice.Location.x) / Field.Width, 0, 333), 50);
             
             List<Target> targets = new List<Target>();
 
@@ -195,8 +187,8 @@ namespace Phoenix
                 float reflectT = (slice.Location - a).Dot(a2B);
 
                 Target target = new Target(
-                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetWidth + Vec3.Z * MIN_Z
+                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MIN_Z
                 );
 
                 if (reflectT < 0 || a.Dist(b) < reflectT || slice.Location.FlatDist(reflectPoint) > 3000) continue;
@@ -212,11 +204,11 @@ namespace Phoenix
                 Renderer.Line3D(Vec3.Z * 800 + (a + b) / 2, Vec3.Z * 800 + (a + b) / 2 + normal * 100, Color.Yellow);
                 Renderer.Polyline3D(new List<Vec3>
                 {
-                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetWidth + Vec3.Z * MIN_Z,
-                    reflectPoint - a2B * targetWidth + Vec3.Z * MIN_Z,
-                    reflectPoint - a2B * targetWidth + Vec3.Z * MAX_Z,
+                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MAX_Z,
+                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MIN_Z,
+                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MIN_Z,
+                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
                 }, Color.Azure);
                 Renderer.Line3D(slice.Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);
                 Renderer.Line3D(Field.Goals[1 - Me.Team].Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);

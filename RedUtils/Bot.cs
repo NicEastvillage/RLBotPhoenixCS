@@ -134,6 +134,8 @@ namespace RedUtils
 		/// <returns>The bot's inputs for that tick</returns>
 		public override Controller GetOutput(GameTickPacket packet)
 		{
+			UpdateDeltaTime();
+			
 			// Resets the Controller every tick
 			Controller = new Controller(); 
 
@@ -162,8 +164,6 @@ namespace RedUtils
 					Action = null;
 				}
 			}
-
-			UpdateDeltaTime();
 
 			// returns our inputs to RLBot
 			return Controller; 

@@ -1,22 +1,15 @@
 ﻿using System;
 using RedUtils.Math;
 
-namespace RedUtils
+namespace RedUtils.Actions.KickOffs
 {
 	/// <summary>A kickoff action, which performs a speedflip kickoff</summary>
-	public class Kickoff : IAction
+	public class SpeedKickOff : IAction
 	{
-		enum KickOffType
-		{
-			FarBack,
-			BackSide,
-			Diagoal,
-		}
-		
 		/// <summary>Kickoffs aren't interruptible, so this will always be false</summary>
 		public bool Interruptible
 		{ get; set; }
-		/// <summary>Whether or not the kickoff pepriod has ended</summary>
+		/// <summary>Whether or not the kickoff period has ended</summary>
 		public bool Finished
 		{ get; set; }
 
@@ -32,28 +25,17 @@ namespace RedUtils
 		private float _rand1;
 		/// <summary>A random number close to 0.5</summary>
 		private float _rand2;
-		/// <summary>Whether or not we fake the kickoff. Only applies on far kickoffs</summary>
-		private readonly bool _fake;
-
-		private float _fakeBeginTime = -1f;
-		private Drive _fakeDrive;
 
 		/// <summary>Initializes a new kickoff action</summary>
-		public Kickoff(Car car)
+		public SpeedKickOff(KickOffType type)
 		{
 			Interruptible = false;
 			Finished = false;
-			_type = MathF.Abs(car.Location.y) switch
-			{
-				<= 3500f => KickOffType.Diagoal,
-				<= 4000f => KickOffType.BackSide,
-				_ => KickOffType.FarBack,
-			};
+			_type = type;
 			
 			Random rng = new Random();
 			_rand1 = rng.NextMiddleFloatOf3();
 			_rand2 = rng.NextMiddleFloatOf3();
-			_fake = _type == KickOffType.FarBack && rng.NextFloat() < 0.4f;
 		}
 
 		/// <summary>Performs this kickoff action</summary>
@@ -61,31 +43,7 @@ namespace RedUtils
 		{
 			Finished = Ball.Location.x != 0 || Ball.Location.y != 0 || !Game.IsKickoffPause;
 			
-			if (_type == KickOffType.FarBack && _fake)
-			{
-				if (_fakeBeginTime < 0)
-				{
-					// Begin fake
-					_fakeBeginTime = Game.Time;
-				}
-				else if (_fakeDrive != null)
-				{
-					// Drive forwards until someone hits the ball 
-					_fakeDrive.Run(bot);
-					Finished = Game.Time > _fakeBeginTime + 2.7f;
-				}
-				else if (Game.Time < _fakeBeginTime + 0.8f)
-				{
-					// Creep backwards
-					bot.Controller.Throttle = -1f;
-				}
-				else if (Game.Time > _fakeBeginTime + 2.1f)
-				{
-					// Begin driving forwards
-					_fakeDrive = new Drive(bot.Me, Vec3.Zero, 1400, false);
-				}
-			}
-			else if (_speedFlip != null && !_speedFlip.Finished)
+			if (_speedFlip != null && !_speedFlip.Finished)
 			{
 				// If we are speed flipping, make sure to hold down boost
 				bot.Controller.Boost = true;
@@ -114,7 +72,7 @@ namespace RedUtils
 				{
 					// When we are moving fast enough, start speed flipping
 					_speedFlipped = true;
-					Vec3 sideWaysOffset = _type == KickOffType.Diagoal
+					Vec3 sideWaysOffset = _type == KickOffType.Diagonal
 						? Vec3.X * MathF.Sign(-bot.Me.Location.x) * 250
 						: Vec3.Zero;
 					_speedFlip = new SpeedFlip(bot.Me.Location.Direction(Ball.Location - Ball.Location.Direction(bot.TheirGoal.Location) * (160 + _rand2 * 30) + sideWaysOffset));
