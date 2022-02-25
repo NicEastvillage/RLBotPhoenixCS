@@ -74,8 +74,6 @@ namespace RedUtils.Actions.KickOffs
                 // Pick up boost when spawning back right/left by driving a bot towards the middle boost pad first
                 target.y = Field.Side(bot.Me.Team) * 2790;
             }
-
-            Console.WriteLine($"OGFK: {oppPerformsKick} | Dodge: {_dodge != null} | VTB: {velTowardsBall}");
             
             // Drive
             if (_drive == null)

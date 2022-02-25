@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using RedUtils;
-using RedUtils.Actions.KickOffs;
 using RedUtils.Math;
 
 /* 
@@ -19,6 +18,7 @@ namespace Phoenix
     public class PhoenixBot : RUBot
     {
         private KickOffPicker _kickOffPicker = new KickOffPicker();
+        private DribbleDetector _dribbleDetector = new DribbleDetector();
         
         // We want the constructor for our Bot to extend from RUBot, but feel free to add some other initialization in here as well.
         public PhoenixBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
@@ -38,9 +38,31 @@ namespace Phoenix
             String actionStr = Action != null ? Action.ToString() : "null";
             Renderer.Text2D($"{Name}: {actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
 
+            Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
+            
             if (IsKickoff && Action == null)
             {
                 Action = _kickOffPicker.PickKickOffAction(this);
+            }
+            else if (dribbler != null && dribbler.Team != Team && _dribbleDetector.Duration() > 0.4f && (Action == null || Action is Drive || Action.Interruptible))
+            {
+                // An enemy is dribbling. Tackle them!
+                if (Action is not Drive)
+                {
+                    Action = new Drive(Me, dribbler.Location, wasteBoost: true);
+                }
+                
+                // Predict location
+                float naiveEta = Drive.GetEta(Me, dribbler.Location, true);
+                Vec3 naiveLoc = dribbler.Location + naiveEta * dribbler.Velocity;
+                float okayEta = Drive.GetEta(Me, naiveLoc, true);
+                Vec3 okayLoc = dribbler.Location + okayEta * dribbler.Velocity;
+                float eta = Drive.GetEta(Me, okayLoc, true);
+                Vec3 loc = dribbler.Location + eta * dribbler.Velocity;;
+
+                ((Drive)Action).Target = loc;
+                Renderer.Rect3D(loc, 14, 14, color: Color.DarkOrange);
+                Renderer.Rect3D(dribbler.Location, 20, 20, color: Color.Red);
             }
             else if (Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible))
             {
@@ -116,7 +138,7 @@ namespace Phoenix
                     else if (Me.Boost >= 50 && !onOurSideOfShadowLocation)
                     {
                         // Get back!
-                        alternative = new Drive(Me, 0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0));
+                        alternative = new Drive(Me, 0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0), wasteBoost: true);
                     }
                     else if (Me.Boost <= 50 && onOurSideOfShadowLocation)
                     {

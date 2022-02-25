@@ -26,7 +26,7 @@ namespace RedUtils
 			float carSpeed = Me.Local(Me.Velocity).x; // The car's speed in the forward direction
 			float speedDiff = (targetSpeed * (backwards ? -1 : 1)) - carSpeed;
 			Controller.Throttle = Utils.Cap(MathF.Pow(speedDiff, 2) * MathF.Sign(speedDiff) / 1000, -1, 1);
-			Controller.Boost = targetSpeed > 1410 && speedDiff > 100 && carSpeed < 2200 && Controller.Throttle == 1 && !backwards;
+			Controller.Boost = targetSpeed > 1410 && speedDiff > 400 && carSpeed < 2250 && Controller.Throttle == 1 && !backwards;
 			return carSpeed;
 		}
 

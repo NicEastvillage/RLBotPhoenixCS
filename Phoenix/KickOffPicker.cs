@@ -13,7 +13,7 @@ namespace Phoenix
     /// </summary>
     public class KickOffPicker
     {
-        private const float EvalDuration = 14f;
+        private const float EvalDuration = 15f;
         private const float DirectionalReward = 0.035f;
 
         /// <summary>
