@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
+using Phoenix;
 using RedUtils.Math;
 using RLBotDotNet;
 
@@ -60,16 +61,16 @@ namespace RedUtils
 
 		/// <summary>Searches through the ball prediction for the first valid shot given by the ShotCheck</summary>
 		/// <param name="shotCheck">The function that determines which shot to go for, if any</param>
-		/// <param name="target">The final resting place of the ball after we hit it (hopefully)</param>
-		public static Shot FindShot(ShotCheck shotCheck, Target target)
+		/// <param name="targetFactory">The final resting place of the ball after we hit it (hopefully)</param>
+		public Shot FindShot(ShotCheck shotCheck, ITargetFactory targetFactory)
 		{
-			return FindShot(shotCheck, new List<Target> { target });
+			return FindShot(shotCheck, new List<ITargetFactory> { targetFactory });
 		}
 		
 		/// <summary>Searches through the ball prediction for the first valid shot given by the ShotCheck</summary>
 		/// <param name="shotCheck">The function that determines which shot to go for, if any</param>
-		/// <param name="targets">The final resting place of the ball after we hit it (hopefully)</param>
-		public static Shot FindShot(ShotCheck shotCheck, IEnumerable<Target> targets)
+		/// <param name="targetFactories">The final resting place of the ball after we hit it (hopefully)</param>
+		public Shot FindShot(ShotCheck shotCheck, IEnumerable<ITargetFactory> targetFactories)
 		{
 			if (Ball.Prediction.Length > 0)
 			{
@@ -77,9 +78,11 @@ namespace RedUtils
 				{
 					if (MathF.Abs(Ball.Prediction[i].Location.y) > 5250) break;
 
-					foreach (Target target in targets)
+					foreach (ITargetFactory factory in targetFactories)
 					{
-						Shot shot = shotCheck(Ball.Prediction[i], target);
+						Target t = factory.GetTarget(Me, Ball.Prediction[i]);
+						if (t == null) continue;
+						Shot shot = shotCheck(Ball.Prediction[i], t);
 						if (shot != null) return shot;
 					}
 				}

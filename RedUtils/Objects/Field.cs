@@ -153,6 +153,17 @@ namespace RedUtils
 			return point.x < Goal.Width / 2 + radius && point.y > Length / 2 - radius && point.y < Length / 2 + Goal.Depth + radius && point.z < Goal.Height + radius;
 		}
 
+		public static Vec3 FlowDir(Vec3 loc, int team)
+		{
+			Vec3 locToEnemyGoal = Goals[1 - team].Location - loc;
+			Vec3 myGoalToLoc = loc - Goals[team].Location;
+			float distToEnemyGoal = MathF.Pow(.75f * locToEnemyGoal.Length() / 100f, 2);
+			float distToMyGoal = MathF.Pow(myGoalToLoc.Length() / 100f, 2);
+			float distSum = distToEnemyGoal + distToMyGoal;
+			float t = distToEnemyGoal / distSum;
+			return Utils.Lerp(t, locToEnemyGoal, myGoalToLoc).Normalize();
+		}
+
 		/// <summary>Returns the closest drivable surface to a given point 
 		/// <para>Excludes the ceiling, since it isn't a drivable surface. If you want to include the ceiling, use the overload where you can exclude surfaces, and pass in an empty surfaces array</para>
 		/// </summary>

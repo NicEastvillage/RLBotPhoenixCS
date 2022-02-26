@@ -19,10 +19,32 @@ namespace Phoenix
     {
         private KickOffPicker _kickOffPicker = new KickOffPicker();
         private DribbleDetector _dribbleDetector = new DribbleDetector();
+
+        public List<ITargetFactory> WallReflectTargetFactories { get; }
         
-        // We want the constructor for our Bot to extend from RUBot, but feel free to add some other initialization in here as well.
         public PhoenixBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
         {
+            WallReflectTargetFactories = new List<ITargetFactory>
+            {
+                new WallReflectTargetFactory(Field.Side(Team) * Vec3.X,
+                    new Vec3(-Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000),
+                    new Vec3(-Field.Side(Team) * Field.Width / 2, 3700)), // Left wall
+                new WallReflectTargetFactory(-Field.Side(Team) * Vec3.X,
+                    new Vec3(Field.Side(Team) * Field.Width / 2, 3700),
+                    new Vec3(Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000)), // Right wall
+                new WallReflectTargetFactory(new Vec3(Field.Side(Team), Field.Side(Team)).Normalize(),
+                    new Vec3(-Field.Side(Team) * 3900, -Field.Side(Team) * 4164),
+                    new Vec3(-Field.Side(Team) * 3200, -Field.Side(Team) * 4864)), // Enemy left corner wall
+                new WallReflectTargetFactory(new Vec3(-Field.Side(Team), Field.Side(Team)).Normalize(),
+                    new Vec3(Field.Side(Team) * 3200, -Field.Side(Team) * 4864),
+                    new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Enemy right corner wall
+                new WallReflectTargetFactory(new Vec3(Field.Side(Team), -Field.Side(Team)).Normalize(),
+                    new Vec3(-Field.Side(Team) * 3200, Field.Side(Team) * 4864),
+                    new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall, artificially extended for better clears
+                new WallReflectTargetFactory(new Vec3(-Field.Side(Team), -Field.Side(Team)).Normalize(),
+                    new Vec3(Field.Side(Team) * 3900, Field.Side(Team) * 4164),
+                    new Vec3(Field.Side(Team) * 3200, Field.Side(Team) * 4864)), // Our right corner wall, artificially extended for better clears
+            };
         }
 
         // Runs every tick. Should be used to find an Action to execute
@@ -30,7 +52,6 @@ namespace Phoenix
         {
             //GameAnalysis.Update(this);
             //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
-            WallReflectTargets();
             _kickOffPicker.Evaluate(this);
             //_kickOffPicker.DrawSummary(Renderer);
 
@@ -38,6 +59,20 @@ namespace Phoenix
             String actionStr = Action != null ? Action.ToString() : "null";
             Renderer.Text2D($"{Name}: {actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
 
+            Renderer.Color = Color.Yellow;
+            var factories = new List<ITargetFactory> { new ForwardTargetFactory() }.Concat(WallReflectTargetFactories);
+            foreach (var factory in factories)
+            {
+                Target target = factory.GetTarget(Me, BallSlice.Now());
+                if (target == null) continue;
+                Vec3 topRight = target.BottomRight.WithZ(target.TopLeft.z);
+                Vec3 bottomLeft = target.TopLeft.WithZ(target.BottomRight.z);
+                Renderer.Line3D(target.TopLeft, topRight, Color.Coral);
+                Renderer.Line3D(topRight, target.BottomRight);
+                Renderer.Line3D(target.BottomRight, bottomLeft);
+                Renderer.Line3D(bottomLeft, target.TopLeft);
+            }
+            
             Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
             
             if (IsKickoff && Action == null)
@@ -66,16 +101,17 @@ namespace Phoenix
             }
             else if (Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible))
             {
-                Shot shot;
+                Shot shot = null;
                 // search for the first available shot using NoAerialsShotCheck
                 CheapNoAerialShotCheck.Next(Me);
-                List<Target> goalTargets = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
-                    ? new List<Target> { new(OurGoal, true), new(TheirGoal) }
-                    : new List<Target> { new(TheirGoal) };
-                Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargets);
-                Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargets());
+                List<ITargetFactory> goalTargetFactories = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
+                    ? new List<ITargetFactory> { new StaticTargetFactory(new(OurGoal, true)), new StaticTargetFactory(new(TheirGoal)) }
+                    : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
+                Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargetFactories);
+                Shot forwardShot = FindShot(CheapNoAerialShotCheck.ShotCheck, new ForwardTargetFactory());
+                Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargetFactories);
 
-                if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.04 < directShot.Slice.Time)
+                if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.02f < directShot.Slice.Time)
                 {
                     // Early reflect shot is possible
                     shot = reflectShot;
@@ -83,6 +119,14 @@ namespace Phoenix
                 else
                 {
                     shot = directShot ?? reflectShot;
+                }
+                if (shot != null && forwardShot != null && forwardShot.Slice.Time + 0.02f < shot.Slice.Time)
+                {
+                    // Early forward shot is possible
+                }
+                else
+                {
+                    shot = directShot ?? forwardShot;
                 }
 
                 // Shot is too far away to be concerned about?
@@ -157,88 +201,6 @@ namespace Phoenix
                 Action = shot ?? alternative ??
                     Action ?? new BoostCollectingDrive(Me, shadowLocation);
             }
-        }
-
-        private List<Target> WallReflectTargets()
-        {
-            float naiveTime = Drive.GetEta(Me, Ball.Location);
-            BallSlice naiveSlice = Ball.Prediction.AtTime(Game.Time + naiveTime) ?? BallSlice.Now();
-            float betterNaiveTime = Drive.GetEta(Me, naiveSlice.Location);
-            BallSlice slice = Ball.Prediction.AtTime(Game.Time + betterNaiveTime) ?? BallSlice.Now();
-            float ballToGoalDist = slice.Location.Dist(TheirGoal.Location);
-
-            const float MIN_Z = 190;
-            const float MAX_Z = 1800;
-            float targetSemiWidth = MathF.Max(Utils.Lerp(ballToGoalDist / 5500 - 1.5f * MathF.Abs(slice.Location.x) / Field.Width, 0, 333), 50);
-            
-            List<Target> targets = new List<Target>();
-
-            List<(Vec3, Vec3, Vec3)> reflectWalls = new List<(Vec3, Vec3, Vec3)>
-            {
-                (Field.Side(Team) * Vec3.X,
-                    new Vec3(-Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000),
-                    new Vec3(-Field.Side(Team) * Field.Width / 2, 3700)), // Left wall
-                (-Field.Side(Team) * Vec3.X,
-                    new Vec3(Field.Side(Team) * Field.Width / 2, 3700),
-                    new Vec3(Field.Side(Team) * Field.Width / 2, Field.Side(Team) * 4000)), // Right wall
-                (new Vec3(Field.Side(Team), Field.Side(Team)).Normalize(),
-                    new Vec3(-Field.Side(Team) * 3900, -Field.Side(Team) * 4164),
-                    new Vec3(-Field.Side(Team) * 3200, -Field.Side(Team) * 4864)), // Enemy left corner wall
-                (new Vec3(-Field.Side(Team), Field.Side(Team)).Normalize(),
-                    new Vec3(Field.Side(Team) * 3200, -Field.Side(Team) * 4864),
-                    new Vec3(Field.Side(Team) * 3900, -Field.Side(Team) * 4164)), // Enemy right corner wall
-                (new Vec3(Field.Side(Team), -Field.Side(Team)).Normalize(),
-                    new Vec3(-Field.Side(Team) * 3200, Field.Side(Team) * 4864),
-                    new Vec3(-Field.Side(Team) * 3900, Field.Side(Team) * 4164)), // Our left corner wall, artificially extended for better clears
-                (new Vec3(-Field.Side(Team), -Field.Side(Team)).Normalize(),
-                    new Vec3(Field.Side(Team) * 3900, Field.Side(Team) * 4164),
-                    new Vec3(Field.Side(Team) * 3200, Field.Side(Team) * 4864)), // Our right corner wall, artificially extended for better clears
-            };
-
-            foreach (var (normal, a, b) in reflectWalls)
-            {
-                Vec3 a2B = a.Direction(b);
-
-                Vec3 ballOnA2B = a + a2B * (slice.Location - a).Dot(a2B);
-                float ballDistA2B = (slice.Location - a).Dot(normal);
-
-                Vec3 goalOnA2B = a + a2B * (Field.Goals[1 - Me.Team].Location - a).Dot(a2B);
-                float goalDistA2B = (Field.Goals[1 - Me.Team].Location - a).Dot(normal);
-
-                Vec3 reflectPoint = Utils.Lerp(ballDistA2B / (ballDistA2B + goalDistA2B), ballOnA2B, goalOnA2B);
-                float reflectT = (slice.Location - a).Dot(a2B);
-
-                Target target = new Target(
-                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MIN_Z
-                );
-
-                if (reflectT < 0 || a.Dist(b) < reflectT || slice.Location.FlatDist(reflectPoint) > 3000) continue;
-
-                Renderer.Polyline3D(new List<Vec3>
-                {
-                    a + Vec3.Z * MAX_Z,
-                    b + Vec3.Z * MAX_Z,
-                    b + Vec3.Z * MIN_Z,
-                    a + Vec3.Z * MIN_Z,
-                    a + Vec3.Z * MAX_Z,
-                }, Color.Yellow);
-                Renderer.Line3D(Vec3.Z * 800 + (a + b) / 2, Vec3.Z * 800 + (a + b) / 2 + normal * 100, Color.Yellow);
-                Renderer.Polyline3D(new List<Vec3>
-                {
-                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MAX_Z,
-                    reflectPoint + a2B * targetSemiWidth + Vec3.Z * MIN_Z,
-                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MIN_Z,
-                    reflectPoint - a2B * targetSemiWidth + Vec3.Z * MAX_Z,
-                }, Color.Azure);
-                Renderer.Line3D(slice.Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);
-                Renderer.Line3D(Field.Goals[1 - Me.Team].Location, reflectPoint + Vec3.Z * 800, Color.Fuchsia);
-
-                targets.Add(target);
-            }
-
-            return targets;
         }
     }
 }
