@@ -145,56 +145,69 @@ namespace RedUtils
 				bot.Controller.Handbrake = (MathF.Abs(angleToTarget) > 2 || (Field.DistanceBetweenPoints(nearestTurnCenter, Target) < turnRadius - 40 && SpeedFromTurnRadius(TurnRadius(bot.Me, Target)) < 400))
 											&& mySurface.Normal.Dot(Vec3.Up) > 0.9f && bot.Me.Velocity.Normalize().Dot(bot.Me.Forward) > 0.9f;
 
-				// Estimates where we'll be after dodging
-				Vec3 predictedLocation = bot.Me.LocationAfterDodge();
-				// Estimates how much time we have to dodge
-				float timeLeft = bot.Me.Location.FlatDist(finalTarget) / MathF.Max(carSpeed + 500, 1410);
-				float speedFlipTimeLeft = bot.Me.Location.FlatDist(finalTarget) / MathF.Max(carSpeed + 500 + MathF.Min(bot.Me.Boost, 40) * Car.BoostAccel / 2, 1410);
-
-				if (AllowDodges && Field.InField(predictedLocation, 50) && carSpeed < 2000 && bot.Me.Location.z < 600 && Game.Gravity.z < -500 && MathF.Abs(bot.Me.Velocity.Dot(bot.Me.Up)) < 100)
+				if (AllowDodges)
 				{
-					// Look for dodges only if we won't hit a wall, and when we actually need to
-					if (forwardSpeed > 0)
+					// Estimates where we'll be after dodging
+					Vec3 predictedLocation = bot.Me.LocationAfterDodge();
+					// Estimates how much time we have to dodge
+					float timeLeft = bot.Me.Location.FlatDist(finalTarget) / MathF.Max(carSpeed + 500, 1410);
+					float speedFlipTimeLeft = bot.Me.Location.FlatDist(finalTarget) /
+					                          MathF.Max(
+						                          carSpeed + 500 + MathF.Min(bot.Me.Boost, 40) * Car.BoostAccel / 2,
+						                          1410);
+
+					if (Field.InField(predictedLocation, 50) && carSpeed < 2000 && bot.Me.Location.z < 600 &&
+					    Game.Gravity.z < -500 && MathF.Abs(bot.Me.Velocity.Dot(bot.Me.Up)) < 100)
 					{
-						if (TargetSpeed > 100 + forwardSpeed)
+						// Look for dodges only if we won't hit a wall, and when we actually need to
+						if (forwardSpeed > 0)
 						{
-							// When we're moving forward, and need extra speed, look for dodges, speedflips, and wavedashes
-							if (bot.Me.Location.z < 200 && bot.Me.IsGrounded && carSpeed > 1000 && bot.Me.Forward.FlatAngle(bot.Me.Location.Direction(finalTarget)) < 0.1f && timeOnGround > 0.2f)
+							if (TargetSpeed > 150 + forwardSpeed)
 							{
-								// If we are on the ground, we rule out wavedashes, and look at dodges
-								Dodge dodge = new Dodge(bot.Me.Location.FlatDirection(Target));
-
-								if (speedFlipTimeLeft > SpeedFlip.Duration && bot.Me.Boost > 0 && Field.InField(predictedLocation, 500) && WasteBoost)
-								{ 
-									// Only speedflip if we have time, and have boost
-									Action = new SpeedFlip(bot.Me.Location.FlatDirection(Target));
-								}
-								else if (timeLeft > dodge.Duration)
+								// When we're moving forward, and need extra speed, look for dodges, speedflips, and wavedashes
+								if (bot.Me.Location.z < 200 && bot.Me.IsGrounded && carSpeed > 1000 &&
+								    bot.Me.Forward.FlatAngle(bot.Me.Location.Direction(finalTarget)) < 0.1f &&
+								    timeOnGround > 0.2f)
 								{
-									// Otherwise, dodge if we have time
-									Action = dodge;
-								}
-							}
-							else if (bot.Me.Location.z > 100 && !bot.Me.HasDoubleJumped && (!bot.Me.IsGrounded || bot.Me.Velocity.Dot(Vec3.Up) < 200))
-							{
-								// If we are on the wall, or if we are falling and have a dodge, look for a wavedash
-								Wavedash wavedash = new Wavedash(bot.Me.Location.FlatDirection(Target));
+									// If we are on the ground, we rule out wavedashes, and look at dodges
+									Dodge dodge = new Dodge(bot.Me.Location.FlatDirection(Target));
 
-								if (timeLeft > wavedash.Duration)
+									if (speedFlipTimeLeft > SpeedFlip.Duration && bot.Me.Boost > 0 &&
+									    Field.InField(predictedLocation, 500) && WasteBoost)
+									{
+										// Only speedflip if we have time, and have boost
+										Action = new SpeedFlip(bot.Me.Location.FlatDirection(Target));
+									}
+									else if (timeLeft > dodge.Duration)
+									{
+										// Otherwise, dodge if we have time
+										Action = dodge;
+									}
+								}
+								else if (bot.Me.Location.z > 100 && !bot.Me.HasDoubleJumped &&
+								         (!bot.Me.IsGrounded || bot.Me.Velocity.Dot(Vec3.Up) < 200))
 								{
-									// Only wavedash if we have time to
-									Action = wavedash;
+									// If we are on the wall, or if we are falling and have a dodge, look for a wavedash
+									Wavedash wavedash = new Wavedash(bot.Me.Location.FlatDirection(Target));
+
+									if (timeLeft > wavedash.Duration)
+									{
+										// Only wavedash if we have time to
+										Action = wavedash;
+									}
 								}
 							}
 						}
-					}
-					else if (bot.Me.Location.z < 200 && bot.Me.IsGrounded && carSpeed > 800 && Backwards && (-bot.Me.Forward).FlatAngle(bot.Me.Location.Direction(finalTarget)) < 0.1f && timeOnGround > 0.2f)
-					{
-						// If we're moving backwards, and are facing the right direction, check if we should halfflip
-						if (timeLeft > HalfFlip.Duration)
+						else if (bot.Me.Location.z < 200 && bot.Me.IsGrounded && carSpeed > 800 && Backwards &&
+						         (-bot.Me.Forward).FlatAngle(bot.Me.Location.Direction(finalTarget)) < 0.1f &&
+						         timeOnGround > 0.2f)
 						{
-							// Only halfflip if we have time
-							Action = new HalfFlip();
+							// If we're moving backwards, and are facing the right direction, check if we should halfflip
+							if (timeLeft > HalfFlip.Duration)
+							{
+								// Only halfflip if we have time
+								Action = new HalfFlip();
+							}
 						}
 					}
 				}

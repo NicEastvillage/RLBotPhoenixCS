@@ -111,8 +111,8 @@ namespace Phoenix
 
         public void Evaluate(RUBot bot)
         {
+            // Did we recently do a kickoff?
             if (_latest == null || !Game.IsRoundActive) return;
-
             float timePassed = Game.Time - _latestTime;
             if (timePassed >= EvalDuration) return;
 

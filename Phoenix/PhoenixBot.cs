@@ -53,25 +53,26 @@ namespace Phoenix
             //GameAnalysis.Update(this);
             //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
             _kickOffPicker.Evaluate(this);
-            //_kickOffPicker.DrawSummary(Renderer);
+            _kickOffPicker.DrawSummary(Renderer);
 
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";
             Renderer.Text2D($"{Name}: {actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
 
-            Renderer.Color = Color.Yellow;
-            var factories = new List<ITargetFactory> { new ForwardTargetFactory() }.Concat(WallReflectTargetFactories);
-            foreach (var factory in factories)
-            {
-                Target target = factory.GetTarget(Me, BallSlice.Now());
-                if (target == null) continue;
-                Vec3 topRight = target.BottomRight.WithZ(target.TopLeft.z);
-                Vec3 bottomLeft = target.TopLeft.WithZ(target.BottomRight.z);
-                Renderer.Line3D(target.TopLeft, topRight, Color.Coral);
-                Renderer.Line3D(topRight, target.BottomRight);
-                Renderer.Line3D(target.BottomRight, bottomLeft);
-                Renderer.Line3D(bottomLeft, target.TopLeft);
-            }
+            // Draw wall-reflect targets
+            // Renderer.Color = Color.Yellow;
+            // var factories = new List<ITargetFactory> { new ForwardTargetFactory() }.Concat(WallReflectTargetFactories);
+            // foreach (var factory in factories)
+            // {
+            //     Target target = factory.GetTarget(Me, BallSlice.Now());
+            //     if (target == null) continue;
+            //     Vec3 topRight = target.BottomRight.WithZ(target.TopLeft.z);
+            //     Vec3 bottomLeft = target.TopLeft.WithZ(target.BottomRight.z);
+            //     Renderer.Line3D(target.TopLeft, topRight, Color.Coral);
+            //     Renderer.Line3D(topRight, target.BottomRight);
+            //     Renderer.Line3D(target.BottomRight, bottomLeft);
+            //     Renderer.Line3D(bottomLeft, target.TopLeft);
+            // }
             
             Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
             
@@ -135,25 +136,25 @@ namespace Phoenix
                     shot = null;
                 }
                 
-                if (shot != null)
-                {
-                    // If the shot happens in a corner, special rules apply
-                    if (MathF.Abs(shot.Slice.Location.x) + MathF.Abs(shot.Slice.Location.y) >= 5700)
-                    {
-                        if (MathF.Sign(shot.Slice.Location.y) != Field.Side(Team))
-                        {
-                            // Enemy corner. Never go for these
-                            shot = null;
-                        }
-                        else
-                        {
-                            // Our corner. Only go if we are approaching for the middle or if all enemies are far away
-                            if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0 &&
-                                Cars.AllLivingCars.Any(car => car.Team != Me.Team && car.Location.Dist(OurGoal.Location) < 2500))
-                                shot = null;
-                        }
-                    }
-                }
+                // if (shot != null)
+                // {
+                //     // If the shot happens in a corner, special rules apply
+                //     if (MathF.Abs(shot.Slice.Location.x) + MathF.Abs(shot.Slice.Location.y) >= 5700)
+                //     {
+                //         if (MathF.Sign(shot.Slice.Location.y) != Field.Side(Team))
+                //         {
+                //             // Enemy corner. Never go for these
+                //             shot = null;
+                //         }
+                //         else
+                //         {
+                //             // Our corner. Only go if we are approaching for the middle or if all enemies are far away
+                //             if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0 &&
+                //                 Cars.AllLivingCars.Any(car => car.Team != Me.Team && car.Location.Dist(OurGoal.Location) < 2500))
+                //                 shot = null;
+                //         }
+                //     }
+                // }
                 
                 IAction alternative = Action is BoostCollectingDrive ? Action : null;
                 Vec3 shadowLocation = Utils.Lerp(0.35f, Ball.Location, OurGoal.Location);

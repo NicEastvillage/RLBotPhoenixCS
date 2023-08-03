@@ -102,7 +102,7 @@ namespace RedUtils
 			// This action can only be interrupted if it was initially set as interruptuble, and if its sub action is also interruptible
 			Interruptible = _initiallyInterruptible && DriveAction.Interruptible;
 			// When we arrive at the boost's location, we finish this action
-			Finished = (!ChosenBoost.IsActive && (ChosenBoost.TimeUntilActive > Drive.GetEta(bot.Me, ChosenBoost.Location) || DriveAction.Finished)) || bot.Me.Boost > 90;
+			Finished = !ChosenBoost.IsActive || DriveAction.Finished || bot.Me.Boost > 90;
 		}
 	}
 }
