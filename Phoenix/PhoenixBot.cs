@@ -110,51 +110,39 @@ namespace Phoenix
                     : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
                 Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargetFactories);
                 Shot forwardShot = FindShot(CheapNoAerialShotCheck.ShotCheck, new ForwardTargetFactory());
-                Shot reflectShot = FindShot(CheapNoAerialShotCheck.ShotCheck, WallReflectTargetFactories);
 
-                if (directShot != null && reflectShot != null && reflectShot.Slice.Time + 0.02f < directShot.Slice.Time)
-                {
-                    // Early reflect shot is possible
-                    shot = reflectShot;
-                }
-                else
-                {
-                    shot = directShot ?? reflectShot;
-                }
-                if (shot != null && forwardShot != null && forwardShot.Slice.Time + 0.02f < shot.Slice.Time)
-                {
-                    // Early forward shot is possible
-                }
-                else
-                {
-                    shot = directShot ?? forwardShot;
-                }
+                shot = directShot ?? forwardShot;
 
                 // Shot is too far away to be concerned about?
                 if (shot != null && shot.Slice.Location.Dist(Me.Location) >= 5000)
                 {
                     shot = null;
                 }
-                
-                // if (shot != null)
-                // {
-                //     // If the shot happens in a corner, special rules apply
-                //     if (MathF.Abs(shot.Slice.Location.x) + MathF.Abs(shot.Slice.Location.y) >= 5700)
-                //     {
-                //         if (MathF.Sign(shot.Slice.Location.y) != Field.Side(Team))
-                //         {
-                //             // Enemy corner. Never go for these
-                //             shot = null;
-                //         }
-                //         else
-                //         {
-                //             // Our corner. Only go if we are approaching for the middle or if all enemies are far away
-                //             if (MathF.Abs(shot.Slice.Location.x) - MathF.Abs(Me.Location.x) <= 0 &&
-                //                 Cars.AllLivingCars.Any(car => car.Team != Me.Team && car.Location.Dist(OurGoal.Location) < 2500))
-                //                 shot = null;
-                //         }
-                //     }
-                // }
+
+                NearestCarsByEtaData carEtas = Cars.NearestCarsByEta();
+                Renderer.Rect3D(carEtas.nearestCar.Location, 30, 30, color: Color.Fuchsia);
+                if (carEtas.nearestCar == null)
+                {
+                    // All cars are demolished
+                }
+                else if (carEtas.nearestCar == Me)
+                {
+                    // Nearest car is me
+                }
+                else
+                {
+                    // Abandon shot if someone else will get there much sooner,
+                    // unless that someone is an enemy and we have an ally in defence
+                    // if A unless B === if A and !B
+                    List<Car> allies = Cars.AllCars.FindAll(car => car != Me && car.Team == Me.Team);
+                    bool anyAllyDefending = allies.FindAll(car => car.Location.Dist(OurGoal.Location) < 1000).Count > 0;
+                    bool nearestCarIsEnemy = carEtas.nearestCar.Team != Me.Team;
+                    if (shot != null && !(anyAllyDefending && nearestCarIsEnemy) && Game.Time + carEtas.nearestCarEta <= shot.Slice.Time - 0.5f)
+                    {
+                        // They will hit it first
+                        shot = null;
+                    }
+                }
                 
                 IAction alternative = Action is BoostCollectingDrive ? Action : null;
                 Vec3 shadowLocation = Utils.Lerp(0.35f, Ball.Location, OurGoal.Location);
@@ -190,6 +178,7 @@ namespace Phoenix
                         // Collect boost on defence
                         alternative = new BoostCollectingDrive(Me,
                             0.83f * OurGoal.Location - new Vec3(0.8f * Me.Location.x, 0));
+                        Renderer.Rect3D(Me.Location, 5, 5, color: Color.Bisque);
                     }
                     else
                     {

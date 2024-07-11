@@ -42,5 +42,48 @@ namespace RedUtils
 				car.Update(packet.Players(car.Index).Value);
 			}
 		}
+		
+		public static NearestCarsByEtaData NearestCarsByEta()
+		{
+			var result = new NearestCarsByEtaData();
+			foreach (Car car in AllLivingCars)
+			{
+				float roughEta = car.Location.Dist(Ball.Location) / 2100f;
+				float eta = Drive.GetEta(car, Ball.Prediction[System.Math.Min((int)(roughEta / 60), 359)].Location);
+				
+				if (eta < result.nearestCarEta)
+				{
+					float diff = result.nearestCarEta - eta;
+					result.certain = (diff > 0.05 + result.nearestCarEta / 20);
+					result.nearestCar = car;
+					result.nearestCarEta = eta;
+				}
+				
+				if (eta < result.nearestEnemyEta)
+				{
+					result.nearestEnemy = car;
+					result.nearestEnemyEta = eta;
+				}
+				
+				if (eta < result.nearestAllyEta)
+				{
+					result.nearestAlly = car;
+					result.nearestAllyEta = eta;
+				}
+			}
+
+			return result;
+		}
+	}
+	
+	public class NearestCarsByEtaData
+	{
+		public Car nearestCar = null;
+		public float nearestCarEta = 10000f;
+		public Car nearestEnemy = null;
+		public float nearestEnemyEta = 10000f;
+		public Car nearestAlly = null;
+		public float nearestAllyEta = 10000f;
+		public bool certain = true;
 	}
 }

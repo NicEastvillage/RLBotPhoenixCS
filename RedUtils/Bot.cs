@@ -164,6 +164,11 @@ namespace RedUtils
 					Action = null;
 				}
 			}
+			
+			// East addition: Disallow all boosting when the ball is far away and one the enemy half
+			bool boostOk = IsKickoff || (Me.Location.Dist(Ball.Location) < 5000 &&
+			               System.Math.Sign(Ball.Location.y) == System.Math.Sign(OurGoal.Location.y));
+			Controller.Boost = Controller.Boost && boostOk;
 
 			// returns our inputs to RLBot
 			return Controller; 

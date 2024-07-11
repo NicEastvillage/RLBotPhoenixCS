@@ -27,7 +27,7 @@ namespace Phoenix
                 * Click the configuration dropdown to the left of the Run and Debug buttons (top right of the window),
                 * choose Edit Configurations -- there is a box for "Program arguments", enter the port there.
                 * 
-                * Example of a port: 30003
+                * Example of a port: 30013
                 */
 
                 ConsoleColor currentColor = Console.ForegroundColor;
