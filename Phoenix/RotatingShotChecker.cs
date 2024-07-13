@@ -3,7 +3,7 @@ using RedUtils.Math;
 
 namespace Phoenix
 {
-    public static class CheapNoAerialShotCheck
+    public static class RotatingShotChecker
     {
         public static Car Me;
 

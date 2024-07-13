@@ -99,12 +99,14 @@ namespace RedUtils
 			if (Cars.Count != packet.PlayersLength)
 			{
 				// Reinitializes the cars if someone has left or joined the game
+				Cars.Me = Me;
 				Cars.Initialize(packet); 
 			}
 			else
 			{
 				// Updates the cars' positions, velocities, etc
-				Cars.Update(packet); 
+				Cars.Me = Me;
+				Cars.Update(packet);
 			}
 			// Updates the ball's position, velocity, etc
 			Ball.Update(this, packet.Ball.Value);

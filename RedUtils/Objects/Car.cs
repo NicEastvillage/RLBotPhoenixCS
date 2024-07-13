@@ -48,13 +48,13 @@ namespace RedUtils
 		public Mat3x3 Orientation;
 
 		/// <summary>The car's hitbox</summary>
-		public Hitbox Hitbox { get { return new Hitbox(Location, _hitboxDimensions, _hitboxOffset, Orientation); } }
+		public Hitbox Hitbox => new(Location, _hitboxDimensions, _hitboxOffset, Orientation);
 		/// <summary>A normalized vector pointing out the front of the car</summary>
-		public Vec3 Forward { get { return Orientation.Forward; } set { Orientation[0] = value; } }
+		public Vec3 Forward => Orientation.Forward;
 		/// <summary>A normalized vector pointing out to the right of the car</summary>
-		public Vec3 Right { get { return Orientation.Right; } set { Orientation[1] = value; } }
+		public Vec3 Right => Orientation.Right;
 		/// <summary>A normalized vector pointing out through the car's roof</summary>
-		public Vec3 Up { get { return Orientation.Up; } set { Orientation[2] = value; } }
+		public Vec3 Up => Orientation.Up;
 
 		/// <summary>The name of the player or bot who controls this car</summary>
 		public string Name;

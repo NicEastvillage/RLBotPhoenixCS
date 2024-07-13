@@ -182,10 +182,15 @@ namespace RedUtils.Math
 		{
 			return new Vec3(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
 		}
-		/// <summary>Returns the legnth/magnitude of this vector</summary>
+		/// <summary>Returns the length/magnitude of this vector</summary>
 		public float Length()
 		{ 
 			return MathF.Sqrt(x * x + y * y + z * z);
+		}
+		/// <summary>Returns the squared length/magnitude of this vector</summary>
+		public float LengthSquared()
+		{
+			return x * x + y * y + z * z;
 		}
 		/// <summary>Returns a normalized version of this vector 
 		/// <para>In other words, its the same vector, just with a length of 1</para>
@@ -345,6 +350,16 @@ namespace RedUtils.Math
 		public Vec3 Rotate(float angle, Vec3 rotationAxis)
 		{
 			return Flatten(rotationAxis) * MathF.Cos(angle) + Flatten(rotationAxis).Cross(rotationAxis).Rescale(Flatten(rotationAxis).Length()) * MathF.Sin(angle) + rotationAxis * Dot(rotationAxis);
+		}
+
+		/// <summary>Returns the distance to the line segment stretching from a to b</summary>
+		public Vec3 ProjToLineSegment(Vec3 a, Vec3 b)
+		{
+			var a2b = b - a;
+			var lenSqr = a2b.LengthSquared();
+			if (lenSqr == 0) return a;
+			var t = Utils.Cap((this - a).Dot(a2b) / lenSqr, 0, 1);
+			return a + t * a2b;
 		}
 		#endregion
 		public override string ToString()

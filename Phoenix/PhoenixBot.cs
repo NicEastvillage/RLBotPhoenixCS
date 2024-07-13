@@ -19,6 +19,7 @@ namespace Phoenix
     {
         private KickOffPicker _kickOffPicker = new KickOffPicker();
         private DribbleDetector _dribbleDetector = new DribbleDetector();
+        private RoleFinder _roleFinder = new RoleFinder();
 
         public List<ITargetFactory> WallReflectTargetFactories { get; }
         
@@ -55,32 +56,131 @@ namespace Phoenix
             _kickOffPicker.Evaluate(this);
             _kickOffPicker.DrawSummary(Renderer);
 
+            Role role = _roleFinder.Update(this);
+            
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString() : "null";
-            Renderer.Text2D($"{Name}: {actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
+            Renderer.Text2D($"{Name,14}: {role}/{actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
+            Renderer.Text3D(role.ToString(), Me.Location + Vec3.Up * 30, 1, Color.Bisque);
 
-            // Draw wall-reflect targets
-            // Renderer.Color = Color.Yellow;
-            // var factories = new List<ITargetFactory> { new ForwardTargetFactory() }.Concat(WallReflectTargetFactories);
-            // foreach (var factory in factories)
-            // {
-            //     Target target = factory.GetTarget(Me, BallSlice.Now());
-            //     if (target == null) continue;
-            //     Vec3 topRight = target.BottomRight.WithZ(target.TopLeft.z);
-            //     Vec3 bottomLeft = target.TopLeft.WithZ(target.BottomRight.z);
-            //     Renderer.Line3D(target.TopLeft, topRight, Color.Coral);
-            //     Renderer.Line3D(topRight, target.BottomRight);
-            //     Renderer.Line3D(target.BottomRight, bottomLeft);
-            //     Renderer.Line3D(bottomLeft, target.TopLeft);
-            // }
-            
-            Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
-            
             if (IsKickoff && Action == null)
             {
                 Action = _kickOffPicker.PickKickOffAction(this);
+                return;
             }
-            else if (dribbler != null && dribbler.Team != Team && _dribbleDetector.Duration() > 0.4f && (Action == null || Action is Drive || Action.Interruptible))
+
+            // TODO Handle other roles
+            switch (role)
+            {
+                case Role.Attack:
+                    RunAttackLogic();
+                    break;
+                default:
+                    RunDefaultLogic();
+                    break;
+            }
+        }
+
+        private void RunDefaultLogic()
+        {
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible);
+            if (!considerNewActions) return;
+            
+            Shot shot = null;
+            // search for the first available shot using NoAerialsShotCheck
+            RotatingShotChecker.Next(Me);
+            List<ITargetFactory> goalTargetFactories = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
+                ? new List<ITargetFactory> { new ClearGoalTargetFactory(OurGoal), new StaticTargetFactory(new(TheirGoal)) }
+                : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
+            Shot directShot = FindShot(RotatingShotChecker.ShotCheck, goalTargetFactories);
+            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, new ForwardTargetFactory());
+
+            shot = directShot ?? forwardShot;
+
+            // Shot is too far away to be concerned about?
+            if (shot != null && shot.Slice.Location.Dist(Me.Location) >= 5000)
+            {
+                shot = null;
+            }
+
+            NearestCarsByEtaData carEtas = Cars.NearestCarsByEta();
+            // Renderer.Rect3D(carEtas.nearestCar.Location, 30, 30, color: Color.Fuchsia);
+            if (carEtas.nearestCar == null)
+            {
+                // All cars are demolished
+            }
+            else if (carEtas.nearestCar == Me)
+            {
+                // Nearest car is me
+            }
+            else
+            {
+                // Abandon shot if someone else will get there much sooner,
+                // unless that someone is an enemy and we have an ally in defence
+                // if A unless B === if A and !B
+                bool anyAllyDefending = Cars.AlliesAndMe.FindAll(car => car.Location.Dist(OurGoal.Location) < 1000).Count > 0;
+                bool nearestCarIsEnemy = carEtas.nearestCar.Team != Me.Team;
+                if (shot != null && !(anyAllyDefending && nearestCarIsEnemy) && Game.Time + carEtas.nearestCarEta <= shot.Slice.Time - 0.5f)
+                {
+                    // They will hit it first
+                    shot = null;
+                }
+            }
+            
+            IAction alternative = Action is BoostCollectingDrive ? Action : null;
+            Vec3 shadowLocation = Utils.Lerp(0.35f, Ball.Location, OurGoal.Location);
+            bool onOurSideOfShadowLocation = (shadowLocation.y - Me.Location.y) * Field.Side(Me.Team) >= 0;
+            
+            if (shot == null && alternative == null)
+            {
+                if (Ball.Location.y * -Field.Side(Team) >= 3000)
+                {
+                    // Ball is far from our goal
+
+                    // Collect boost
+                    if (Me.Boost <= 20)
+                    {
+                        List<Boost> boosts = Field.Boosts.FindAll(boost =>
+                            boost.IsLarge && (boost.Location.y - Me.Location.y) * Field.Side(Me.Team) >= 0);
+                        alternative = new GetBoost(Me, boosts);
+                    }
+                }
+                else if (Me.Boost <= 50 && !onOurSideOfShadowLocation)
+                {
+                    // Get back but also collect boost
+                    alternative = new BoostCollectingDrive(Me,
+                        0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0));
+                }
+                else if (Me.Boost >= 50 && !onOurSideOfShadowLocation)
+                {
+                    // Get back!
+                    alternative = new Drive(Me, 0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0), wasteBoost: true);
+                }
+                else if (Me.Boost <= 50 && onOurSideOfShadowLocation)
+                {
+                    // Collect boost on defence
+                    alternative = new BoostCollectingDrive(Me,
+                        0.83f * OurGoal.Location - new Vec3(0.8f * Me.Location.x, 0));
+                    Renderer.Rect3D(Me.Location, 5, 5, color: Color.Bisque);
+                }
+                else
+                {
+                    // Approach
+                    alternative = new BoostCollectingDrive(Me, shadowLocation);
+                }
+            }
+            
+            // if a shot is found, go for the shot. Otherwise, if there is an Action to execute, execute it. If none of the others apply, drive back to goal.
+            Action = shot ?? alternative ?? Action ?? new BoostCollectingDrive(Me, shadowLocation);
+        }
+
+        private void RunAttackLogic()
+        {
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible);
+            if (!considerNewActions) return;
+            
+            Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
+            if (dribbler != null && dribbler.Team != Team && _dribbleDetector.Duration() > 0.4f)
             {
                 // An enemy is dribbling. Tackle them!
                 if (Action is not Drive)
@@ -99,98 +199,52 @@ namespace Phoenix
                 ((Drive)Action).Target = loc;
                 Renderer.Rect3D(loc, 14, 14, color: Color.DarkOrange);
                 Renderer.Rect3D(dribbler.Location, 20, 20, color: Color.Red);
+                return;
             }
-            else if (Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible))
+            
+            Shot shot = null;
+            RotatingShotChecker.Next(Me);
+            List<ITargetFactory> goalTargetFactories = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
+                ? new List<ITargetFactory> { new ClearGoalTargetFactory(OurGoal), new StaticTargetFactory(new(TheirGoal)) }
+                : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
+            Shot directShot = FindShot(RotatingShotChecker.ShotCheck, goalTargetFactories);
+            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, new ForwardTargetFactory());
+
+            shot = directShot ?? forwardShot;
+
+            // Shot is too far away to be concerned about?
+            if (shot != null && shot.Slice.Location.Dist(Me.Location) >= 5000)
             {
-                Shot shot = null;
-                // search for the first available shot using NoAerialsShotCheck
-                CheapNoAerialShotCheck.Next(Me);
-                List<ITargetFactory> goalTargetFactories = Field.Side(Me.Team) == MathF.Sign(Ball.Location.y)
-                    ? new List<ITargetFactory> { new StaticTargetFactory(new(OurGoal, true)), new StaticTargetFactory(new(TheirGoal)) }
-                    : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
-                Shot directShot = FindShot(CheapNoAerialShotCheck.ShotCheck, goalTargetFactories);
-                Shot forwardShot = FindShot(CheapNoAerialShotCheck.ShotCheck, new ForwardTargetFactory());
-
-                shot = directShot ?? forwardShot;
-
-                // Shot is too far away to be concerned about?
-                if (shot != null && shot.Slice.Location.Dist(Me.Location) >= 5000)
-                {
-                    shot = null;
-                }
-
-                NearestCarsByEtaData carEtas = Cars.NearestCarsByEta();
-                Renderer.Rect3D(carEtas.nearestCar.Location, 30, 30, color: Color.Fuchsia);
-                if (carEtas.nearestCar == null)
-                {
-                    // All cars are demolished
-                }
-                else if (carEtas.nearestCar == Me)
-                {
-                    // Nearest car is me
-                }
-                else
-                {
-                    // Abandon shot if someone else will get there much sooner,
-                    // unless that someone is an enemy and we have an ally in defence
-                    // if A unless B === if A and !B
-                    List<Car> allies = Cars.AllCars.FindAll(car => car != Me && car.Team == Me.Team);
-                    bool anyAllyDefending = allies.FindAll(car => car.Location.Dist(OurGoal.Location) < 1000).Count > 0;
-                    bool nearestCarIsEnemy = carEtas.nearestCar.Team != Me.Team;
-                    if (shot != null && !(anyAllyDefending && nearestCarIsEnemy) && Game.Time + carEtas.nearestCarEta <= shot.Slice.Time - 0.5f)
-                    {
-                        // They will hit it first
-                        shot = null;
-                    }
-                }
-                
-                IAction alternative = Action is BoostCollectingDrive ? Action : null;
-                Vec3 shadowLocation = Utils.Lerp(0.35f, Ball.Location, OurGoal.Location);
-                bool onOurSideOfShadowLocation = (shadowLocation.y - Me.Location.y) * Field.Side(Me.Team) >= 0;
-                
-                if (shot == null && alternative == null)
-                {
-                    if (Ball.Location.y * -Field.Side(Team) >= 3000)
-                    {
-                        // Ball is far from our goal
-
-                        // Collect boost
-                        if (Me.Boost <= 20)
-                        {
-                            List<Boost> boosts = Field.Boosts.FindAll(boost =>
-                                boost.IsLarge && (boost.Location.y - Me.Location.y) * Field.Side(Me.Team) >= 0);
-                            alternative = new GetBoost(Me, boosts);
-                        }
-                    }
-                    else if (Me.Boost <= 50 && !onOurSideOfShadowLocation)
-                    {
-                        // Get back but also collect boost
-                        alternative = new BoostCollectingDrive(Me,
-                            0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0));
-                    }
-                    else if (Me.Boost >= 50 && !onOurSideOfShadowLocation)
-                    {
-                        // Get back!
-                        alternative = new Drive(Me, 0.83f * OurGoal.Location + new Vec3(0.6f * Me.Location.x, 0), wasteBoost: true);
-                    }
-                    else if (Me.Boost <= 50 && onOurSideOfShadowLocation)
-                    {
-                        // Collect boost on defence
-                        alternative = new BoostCollectingDrive(Me,
-                            0.83f * OurGoal.Location - new Vec3(0.8f * Me.Location.x, 0));
-                        Renderer.Rect3D(Me.Location, 5, 5, color: Color.Bisque);
-                    }
-                    else
-                    {
-                        // Approach
-                        alternative = new BoostCollectingDrive(Me, shadowLocation);
-                    }
-                }
-
-                // if a shot is found, go for the shot. Otherwise, if there is an Action to execute, execute it. If none of the others apply, drive back to goal.
-                Action = shot ?? alternative ??
-                    Action ?? new BoostCollectingDrive(Me, shadowLocation);
+                shot = null;
             }
+
+            NearestCarsByEtaData carEtas = Cars.NearestCarsByEta();
+            // Abandon shot if an enemy will get there sooner.
+            // If difference is small and we have an ally in defence, then go for it anyway.
+            bool anyAllyDefending = Cars.AlliesAndMe.FindAll(car => car.Location.Dist(OurGoal.Location) < 1000).Count > 0;
+            float etaThreshold = anyAllyDefending ? 0.4f : 0.1f;
+            if (shot != null && !anyAllyDefending && Game.Time + carEtas.nearestCarEta <= shot.Slice.Time - etaThreshold)
+            {
+                // They will hit it first
+                shot = null;
+            }
+
+            if (shot != null)
+            {
+                Action = shot;
+                return;
+            }
+
+            float roughEta = Me.Location.Dist(Ball.Location) / 2300f;
+            BallSlice roughSlice = Ball.Prediction.AtTime(Game.Time + roughEta);
+            
+            if (Action is Drive drive)
+            {
+                drive.Target = roughSlice.Location;
+                drive.TargetSpeed = 2300f;
+                drive.AllowDodges = true;
+            }
+            else Action = new Drive(Me, roughSlice.Location);
         }
     }
 }

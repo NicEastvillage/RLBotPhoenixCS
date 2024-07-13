@@ -223,8 +223,8 @@ namespace RedUtils
 
 				// Predicts the car's location, orientation, and velocity after turning
 				carAfterTurn.Location = car.Location + turnSide * radius * (1 - MathF.Cos(angle)) + driveDirection * MathF.Sin(angle);
-				carAfterTurn.Forward = carAfterTurn.Location.FlatDirection(DriveLocation, normal);
-				carAfterTurn.Up = normal;
+				var forward = carAfterTurn.Location.FlatDirection(DriveLocation, normal);
+				carAfterTurn.Orientation = new Mat3x3(forward, carAfterTurn.Right, normal);
 				carAfterTurn.Velocity = carAfterTurn.Forward * Drive.SpeedAfterTurn(car.Velocity.Length(), angle, DriveAction.Backwards ? 0.8f : 1);
 
 				shouldTurn = CanHit(carAfterTurn) && !_jumpImmediatly;

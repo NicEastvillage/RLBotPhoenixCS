@@ -6,29 +6,19 @@ namespace RedUtils.Math
 	/// <summary>Represents a 3x3 matrix, meant to represent orientaion</summary>
 	public struct Mat3x3
 	{
-		/// <summary>Three vectors, representing forward, right, and up respectively</summary>
-		public Vec3[] Data
-		{ get; set; }
 		/// <summary>A normalized vector pointing forward, relative to the orientation</summary>
-		public Vec3 Forward
-		{ get => Data[0]; }
+		public Vec3 Forward { get; private set; }
 		/// <summary>A normalized vector pointing right, relative to the orientation</summary>
-		public Vec3 Right
-		{ get => Data[1]; }
-		/// <summary>A normalized vector pointing up, relative to the orientatio</summary>
-		public Vec3 Up
-		{ get => Data[2]; }
-
-		public Vec3 this[int index]
-		{
-			get => Data[index];
-			set => Data[index] = value;
-		}
+		public Vec3 Right { get; private set; }
+		/// <summary>A normalized vector pointing up, relative to the orientation</summary>
+		public Vec3 Up { get; private set; }
 
 		/// <summary>Initializes a matrix with three vectors</summary>
-		public Mat3x3(Vec3 v1, Vec3 v2, Vec3 v3)
+		public Mat3x3(Vec3 forward, Vec3 right, Vec3 up)
 		{
-			Data = new Vec3[3] {v1, v2, v3 };
+			Forward = forward;
+			Right = right;
+			Up = up;
 		}
 
 		/// <summary>Initializes a matrix using pitch, yaw and roll (stored in a vector)</summary>
@@ -40,11 +30,9 @@ namespace RedUtils.Math
 			float sinYaw = MathF.Sin(rotation[1]);
 			float cosRoll = MathF.Cos(rotation[2]);
 			float sinRoll = MathF.Sin(rotation[2]);
-			Data = new Vec3[3] {
-				new Vec3(cosPitch*cosYaw, cosPitch*sinYaw, sinPitch),
-				new Vec3(cosYaw*sinPitch*sinRoll-cosRoll*sinYaw, sinYaw*sinPitch*sinRoll+cosRoll*cosYaw, -cosPitch*sinRoll),
-				new Vec3(-cosRoll*cosYaw*sinPitch-sinRoll*sinYaw, -cosRoll*sinYaw*sinPitch+sinRoll*cosYaw, cosPitch*cosRoll)
-			};
+			Forward = new Vec3(cosPitch * cosYaw, cosPitch * sinYaw, sinPitch);
+			Right = new Vec3(cosYaw*sinPitch*sinRoll-cosRoll*sinYaw, sinYaw*sinPitch*sinRoll+cosRoll*cosYaw, -cosPitch*sinRoll);
+			Up = new Vec3(-cosRoll*cosYaw*sinPitch-sinRoll*sinYaw, -cosRoll*sinYaw*sinPitch+sinRoll*cosYaw, cosPitch*cosRoll);
 		}
 
 		/// <summary>Returns the dot product between this matrix and the given vector</summary>
