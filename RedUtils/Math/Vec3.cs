@@ -253,6 +253,11 @@ namespace RedUtils.Math
 		{
 			return (v - this).Length();
 		}
+		/// <summary>Returns the squared distance between two vectors</summary>
+		public float DistSquared(Vec3 v)
+		{
+			return (v - this).LengthSquared();
+		}
 		/// <summary>Returns the flat distance between two vectors
 		/// <para>In other words, this vector and the given vector are flattened, and then there distance is measured</para>
 		/// </summary>

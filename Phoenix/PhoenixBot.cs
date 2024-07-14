@@ -59,9 +59,9 @@ namespace Phoenix
             Role role = _roleFinder.Update(this);
             
             // Prints out the current action to the screen, so we know what our bot is doing
-            String actionStr = Action != null ? Action.ToString() : "null";
+            String actionStr = Action != null ? Action.ToString()!.Substring(9) : "null";
             Renderer.Text2D($"{Name,14}: {role}/{actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
-            Renderer.Text3D(role.ToString(), Me.Location + Vec3.Up * 30, 1, Color.Bisque);
+            Renderer.Text3D($"{role}/{actionStr}", Me.Location + Vec3.Up * 30, 1, Color.White);
 
             if (IsKickoff && Action == null)
             {
@@ -74,6 +74,12 @@ namespace Phoenix
             {
                 case Role.Attack:
                     RunAttackLogic();
+                    break;
+                case Role.Assist:
+                    RunAssistLogic();
+                    break;
+                case Role.Defend:
+                    RunDefendLogic();
                     break;
                 default:
                     RunDefaultLogic();
@@ -222,7 +228,7 @@ namespace Phoenix
             // Abandon shot if an enemy will get there sooner.
             // If difference is small and we have an ally in defence, then go for it anyway.
             bool anyAllyDefending = Cars.AlliesAndMe.FindAll(car => car.Location.Dist(OurGoal.Location) < 1000).Count > 0;
-            float etaThreshold = anyAllyDefending ? 0.4f : 0.1f;
+            float etaThreshold = anyAllyDefending ? 0.12f : 0.06f;
             if (shot != null && !anyAllyDefending && Game.Time + carEtas.nearestCarEta <= shot.Slice.Time - etaThreshold)
             {
                 // They will hit it first
@@ -238,13 +244,46 @@ namespace Phoenix
             float roughEta = Me.Location.Dist(Ball.Location) / 2300f;
             Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
             
+            // Avoid chasing towards own goal // TODO Improve detection and backup plan 
+            if ((OurGoal.Location - Me.Location).Angle(OurGoal.Location - Ball.Location) < 0.1f)
+            {
+                RunDefendLogic();
+            }
+
+            float heightIssues01 = 0.55f * (roughBallLoc.z - Ball.Radius) / Me.Location.Dist(roughBallLoc.Flatten());
+            float speed = Utils.Cap(Utils.Lerp(heightIssues01, 2100f, 50f), 0, 2100f);
+
             if (Action is Drive drive)
             {
                 drive.Target = roughBallLoc;
-                drive.TargetSpeed = 2300f;
+                drive.TargetSpeed = speed;
                 drive.AllowDodges = true;
+                drive.WasteBoost = Me.Forward.Angle(Me.Location.Direction(Ball.Location)) < 0.9f;
             }
             else Action = new Drive(Me, roughBallLoc);
+        }
+
+        private void RunAssistLogic()
+        {
+            RunDefaultLogic();
+        }
+
+        private void RunDefendLogic()
+        {
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
+            if (!considerNewActions) return;
+
+            Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.91f) / 2;
+            Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
+            float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
+            Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
+
+            // TODO Need faster-driving version of BoostCollectingDrive
+            if (Action is BoostCollectingDrive drive)
+            {
+                drive.FinalDestination = fallBackLoc;
+            }
+            else Action = new BoostCollectingDrive(Me, fallBackLoc);
         }
     }
 }

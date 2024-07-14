@@ -59,6 +59,7 @@ namespace RedUtils
 		public void Run(RUBot bot)
 		{
 			// Calculates how much time we have before we should arrive
+			TargetSpeed = Utils.Cap(TargetSpeed, 0, Car.MaxSpeed);
 			TimeRemaining = Distance(bot.Me) / TargetSpeed;
 
 			// Finds the nearest surface to the target for some calculations later
@@ -140,7 +141,7 @@ namespace RedUtils
 				}
 
 				// Only boost when we are facing our target, and when we really need to
-				bot.Controller.Boost = bot.Controller.Boost && (angleToTarget < 0.3f || (angleToTarget < 0.8f && !bot.Me.IsGrounded)) && !Backwards && WasteBoost;
+				bot.Controller.Boost = (forwardSpeed + Car.BoostAccel / 120 < TargetSpeed) && (angleToTarget < 0.3f || (angleToTarget < 0.8f && !bot.Me.IsGrounded)) && !Backwards && WasteBoost;
 				// Drift if the target is behind us, or when we need to turn really sharply
 				bot.Controller.Handbrake = (MathF.Abs(angleToTarget) > 2 || (Field.DistanceBetweenPoints(nearestTurnCenter, Target) < turnRadius - 40 && SpeedFromTurnRadius(TurnRadius(bot.Me, Target)) < 400))
 											&& mySurface.Normal.Dot(Vec3.Up) > 0.9f && bot.Me.Velocity.Normalize().Dot(bot.Me.Forward) > 0.9f;

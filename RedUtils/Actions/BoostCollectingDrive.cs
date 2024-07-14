@@ -26,7 +26,7 @@ namespace RedUtils
         /// <summary>This action's drive subaction</summary>
         public Arrive ArriveAction;
 
-        public readonly Vec3 FinalDestination;
+        public Vec3 FinalDestination;
 
         private int _tick = 0;
 

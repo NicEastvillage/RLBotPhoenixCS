@@ -1,5 +1,5 @@
-using System.Drawing;
 using RedUtils;
+using RLBotDotNet;
 
 namespace Phoenix
 {
@@ -8,8 +8,8 @@ namespace Phoenix
         /// <summary>Take a shot or drive towards ball</summary>
         Attack,
         /// <summary>Line up to shoot towards opponent goal or away from our goal.
-        /// Approach if already in position ball </summary>
-        Prepare,
+        /// Approach if already in position ball.</summary>
+        Assist,
         /// <summary>Get to goal using other half of map and stay close to our goal</summary>
         Defend,
     }
@@ -19,6 +19,9 @@ namespace Phoenix
         /// <summary>Roles of all cars. Only allies roles are updated</summary>
         public Role[] Roles { get; private set; }
 
+        private Car _prevAttacker;
+        private Car _prevAssister;
+        
         /// <summary>Update role of all allies. Returns my role.</summary>
         public Role Update(PhoenixBot bot)
         {
@@ -29,24 +32,23 @@ namespace Phoenix
 
             foreach (var car in Cars.AlliesAndMe)
             {
-                Roles[car.Index] = Role.Prepare;
+                Roles[car.Index] = Role.Defend;
             }
             
-            var attacker = FindBestAttacker(bot);
-            if (attacker != null)
-            {
-                Roles[attacker.Index] = Role.Attack;                
-            }
-            else
-            {
-                Roles[bot.Index] = Role.Attack;
-            }
+            var attacker = FindBestAttacker(bot) ?? Cars.Me;
+            Roles[attacker.Index] = Role.Attack;
 
+            var assister = FindBestAssister(bot, attacker);
+            if (assister != null) Roles[assister.Index] = Role.Assist;
+
+            _prevAttacker = attacker;
+            _prevAssister = assister;
+            
             return Roles[bot.Me.Index];
         }
         
         /// <summary>Returns car in position for attack role.</summary>
-        public Car FindBestAttacker(PhoenixBot bot)
+        private Car FindBestAttacker(PhoenixBot bot)
         {
             Car attacker = null;
             var attackerValue = float.MaxValue;
@@ -54,20 +56,17 @@ namespace Phoenix
             foreach (var car in Cars.AlliesAndMe)
             {
                 // Does the car have enough boost to reach the balls height?
-                if ((Ball.Location.z + Ball.Velocity.z) / 28 > car.Boost + 15)
-                {
-                    continue;
-                }
+                if ((Ball.Location.z + Ball.Velocity.z) / 28 > car.Boost + 15) continue;
+                
                 // Is the car falling? 
-                if (car.Velocity.z < -200 && !car.IsGrounded)
-                {
-                    continue;
-                }
+                if (car.Velocity.z < -500 && !car.IsGrounded) continue;
                 
                 var locProjOntoBallToGoal = car.Location.ProjToLineSegment(Ball.Location, bot.OurGoal.Location);
                 var distToProj = car.Location.Dist(locProjOntoBallToGoal);
                 var angle = (car.Location - Ball.Location).Angle(ballToGoal);
-                var value = distToProj + distToProj * angle / 1.5f;
+                var value = distToProj + distToProj * angle / 1.5f + car.Location.Dist(Ball.Location) / 5;
+                if (car == _prevAttacker) value -= 230;
+                else if (car == _prevAssister) value -= 100;
                 if (value < attackerValue)
                 {
                     attacker = car;
@@ -76,6 +75,32 @@ namespace Phoenix
             }
 
             return attacker;
+        }
+
+        private Car FindBestAssister(PhoenixBot bot, Car attacker)
+        {
+            Car preparer = null;
+            float preparerValue = float.MaxValue;
+            
+            foreach (var car in Cars.AlliesAndMe)
+            {
+                if (car == attacker) continue;
+                
+                // Must be further from the opponent goal than the attacker - otherwise out of position.
+                if (car.Location.DistSquared(bot.TheirGoal.Location) <
+                    attacker.Location.DistSquared(bot.TheirGoal.Location))
+                    continue;
+
+                float value = car.Location.Dist(Ball.Location);
+                if (car == _prevAssister) value -= 200f;
+                if (value < preparerValue)
+                {
+                    preparer = car;
+                    preparerValue = value;
+                }
+            }
+
+            return preparer;
         }
     }
 }
