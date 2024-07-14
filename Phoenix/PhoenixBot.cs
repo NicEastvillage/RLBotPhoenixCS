@@ -83,7 +83,7 @@ namespace Phoenix
 
         private void RunDefaultLogic()
         {
-            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible);
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
             if (!considerNewActions) return;
             
             Shot shot = null;
@@ -176,7 +176,7 @@ namespace Phoenix
 
         private void RunAttackLogic()
         {
-            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action.Interruptible);
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
             if (!considerNewActions) return;
             
             Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
@@ -236,15 +236,15 @@ namespace Phoenix
             }
 
             float roughEta = Me.Location.Dist(Ball.Location) / 2300f;
-            BallSlice roughSlice = Ball.Prediction.AtTime(Game.Time + roughEta);
+            Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
             
             if (Action is Drive drive)
             {
-                drive.Target = roughSlice.Location;
+                drive.Target = roughBallLoc;
                 drive.TargetSpeed = 2300f;
                 drive.AllowDodges = true;
             }
-            else Action = new Drive(Me, roughSlice.Location);
+            else Action = new Drive(Me, roughBallLoc);
         }
     }
 }
