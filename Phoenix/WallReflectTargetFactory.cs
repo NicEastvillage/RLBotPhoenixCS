@@ -21,7 +21,7 @@ namespace Phoenix
             _wallRight = wallRight;
         }
 
-        public Target GetTarget(Car car, BallSlice slice)
+        public Target? GetTarget(Car car, BallSlice slice)
         {
             Vec3 a = _wallLeft;
             Vec3 b = _wallRight;

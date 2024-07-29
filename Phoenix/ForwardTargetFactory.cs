@@ -11,7 +11,11 @@ namespace Phoenix
         private const float SemiHeight = 350f;
         private const float Offset = 650f;
         
-        public Target GetTarget(Car car, BallSlice slice)
+        public static ForwardTargetFactory Instance { get; private set; } = new();
+
+        private ForwardTargetFactory() { }
+
+        public Target? GetTarget(Car car, BallSlice slice)
         {
             Vec3 flow = Field.FlowDir(slice.Location, car.Team);
             Vec3 center = slice.Location + flow * Offset;

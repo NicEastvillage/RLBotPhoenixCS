@@ -59,7 +59,7 @@ namespace RedUtils
 		public void Run(RUBot bot)
 		{
 			// Calculates how much time we have before we should arrive
-			TargetSpeed = Utils.Cap(TargetSpeed, 0, Car.MaxSpeed);
+			TargetSpeed = float.IsNaN(TargetSpeed) ? 1200f : Utils.Cap(TargetSpeed, 1f, Car.MaxSpeed);
 			TimeRemaining = Distance(bot.Me) / TargetSpeed;
 
 			// Finds the nearest surface to the target for some calculations later

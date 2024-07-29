@@ -13,7 +13,7 @@ namespace Phoenix
             _ourGoal = ourGoal;
         }
 
-        public Target GetTarget(Car car, BallSlice slice)
+        public Target? GetTarget(Car car, BallSlice slice)
         {
             Vec3 carToBallDir = (slice.Location - car.Location).Normalize();
             Vec3 goalToBallDir = (slice.Location - _ourGoal.Location).Normalize();

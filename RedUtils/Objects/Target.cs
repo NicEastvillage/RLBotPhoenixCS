@@ -4,7 +4,7 @@ using RedUtils.Math;
 namespace RedUtils
 {
 	/// <summary>Represents a target to be shot at or away from</summary>
-	public class Target
+	public struct Target
 	{
 		/// <summary>The minimum room for error for any shot. 
 		/// <para>For example, an error of 0 would mean shots with a very extreme angle, with zero room for error, would be allowed</para>
@@ -14,15 +14,15 @@ namespace RedUtils
 		/// <summary>The top left point of the target
 		/// <para>Note that the ball has to fit between the points, meaning the points have to be far enough apart for a ball to fit between them</para>
 		/// </summary>
-		public Vec3 TopLeft;
+		public readonly Vec3 TopLeft;
 		/// <summary>The top right point of the target
 		/// <para>Note that the ball has to fit between the points, meaning the points have to be far enough apart for a ball to fit between them</para>
 		/// </summary>
-		public Vec3 BottomRight;
+		public readonly Vec3 BottomRight;
 		/// <summary>The surface containing all the points the ball could go through between the top left and bottom right points
 		/// <para>Note that this isn't an actual collidable surface</para>
 		/// </summary>
-		public Surface TargetSurface;
+		public readonly Surface TargetSurface;
 
 		/// <summary>Initiliazes a new target using the top left and bottom right points
 		/// <para>If the ball is behind the target, then we will attempt to shoot it away from the target.</para>

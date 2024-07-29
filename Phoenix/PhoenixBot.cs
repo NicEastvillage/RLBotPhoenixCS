@@ -99,7 +99,7 @@ namespace Phoenix
                 ? new List<ITargetFactory> { new ClearGoalTargetFactory(OurGoal), new StaticTargetFactory(new(TheirGoal)) }
                 : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
             Shot directShot = FindShot(RotatingShotChecker.ShotCheck, goalTargetFactories);
-            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, new ForwardTargetFactory());
+            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, ForwardTargetFactory.Instance);
 
             shot = directShot ?? forwardShot;
 
@@ -182,7 +182,7 @@ namespace Phoenix
 
         private void RunAttackLogic()
         {
-            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive || Action is QuickShot) && Action?.Interruptible != false);
             if (!considerNewActions) return;
             
             Car dribbler = _dribbleDetector.GetDribbler(DeltaTime);
@@ -214,7 +214,7 @@ namespace Phoenix
                 ? new List<ITargetFactory> { new ClearGoalTargetFactory(OurGoal), new StaticTargetFactory(new(TheirGoal)) }
                 : new List<ITargetFactory> { new StaticTargetFactory(new Target(TheirGoal)) };
             Shot directShot = FindShot(RotatingShotChecker.ShotCheck, goalTargetFactories);
-            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, new ForwardTargetFactory());
+            Shot forwardShot = FindShot(RotatingShotChecker.ShotCheck, ForwardTargetFactory.Instance);
 
             shot = directShot ?? forwardShot;
 
@@ -251,16 +251,9 @@ namespace Phoenix
             }
 
             float heightIssues01 = 0.55f * (roughBallLoc.z - Ball.Radius) / Me.Location.Dist(roughBallLoc.Flatten());
-            float speed = Utils.Cap(Utils.Lerp(heightIssues01, 2100f, 50f), 0, 2100f);
+            float speed = Utils.Cap(Utils.Lerp(heightIssues01 - 0.1f, Car.MaxSpeed, 50f), 1f, Car.MaxSpeed);
 
-            if (Action is Drive drive)
-            {
-                drive.Target = roughBallLoc;
-                drive.TargetSpeed = speed;
-                drive.AllowDodges = true;
-                drive.WasteBoost = Me.Forward.Angle(Me.Location.Direction(Ball.Location)) < 0.9f;
-            }
-            else Action = new Drive(Me, roughBallLoc);
+            if (Action is not QuickShot) Action = new QuickShot(Me);
         }
 
         private void RunAssistLogic()
@@ -270,7 +263,7 @@ namespace Phoenix
 
         private void RunDefendLogic()
         {
-            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive || Action is QuickShot) && Action?.Interruptible != false);
             if (!considerNewActions) return;
 
             Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.91f) / 2;
