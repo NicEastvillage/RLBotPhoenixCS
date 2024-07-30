@@ -21,6 +21,8 @@ namespace RedUtils
 		public bool AllowFlipping;
 		/// <summary>How much time we need to drive forward before arriving (mainly used if we plan on jumping/dodging just before arriving)</summary>
 		public float RecoveryTime;
+		/// <summary>Whether we will use boost when no arrival time is set</summary>
+		public bool WasteBoost;
 		/// <summary>The drive action</summary>
 		public Drive Drive;
 
@@ -31,7 +33,7 @@ namespace RedUtils
 		/// <param name="direction">The direction the car will try to face at the time of arrival. If null, any direction is allowed.</param>
 		/// <param name="arrivalTime">The specific time of arrival. If negative, it will not be a specific time and we will not waste boost getting there.</param>
 		/// <param name="allowFlipping">Whether or not we are going to allow dodges to increase speed</param>
-		public Arrive(Car car, Vec3 target, Vec3? direction = null, float arrivalTime = -1f, bool allowFlipping = true, float recoveryTime = 0f)
+		public Arrive(Car car, Vec3 target, Vec3? direction = null, float arrivalTime = -1f, bool allowFlipping = true, float recoveryTime = 0.05f, bool wasteBoost = true)
 		{
 			Interruptible = true;
 			Finished = false;
@@ -40,6 +42,7 @@ namespace RedUtils
 			Direction = direction ?? Vec3.Zero;
 			ArrivalTime = arrivalTime;
 			AllowFlipping = allowFlipping;
+			WasteBoost = wasteBoost;
 			Drive = new Drive(car, Target, Car.MaxSpeed, AllowFlipping, arrivalTime >= 0f);
 			RecoveryTime = recoveryTime;
 		}
@@ -55,7 +58,7 @@ namespace RedUtils
 			TimeRemaining = ArrivalTime < 0 ? distance / Car.MaxSpeed : MathF.Max(ArrivalTime - Game.Time, 0.001f);
 
 			// Based on the time remaining, calculate our target speed
-			float targetSpeed = TimeRemaining > 0 ? distance / TimeRemaining : Car.MaxSpeed;
+			float targetSpeed = ArrivalTime < 0 ? Car.MaxSpeed : distance / TimeRemaining;
 
 			// Predicts (roughly) the location of the car after dodging
 			Vec3 predictedLocation = bot.Me.LocationAfterDodge();
@@ -91,6 +94,7 @@ namespace RedUtils
 
 			// Only allow dodges if we are sure we won't land too far over, and that we have enough time to recover
 			Drive.AllowDodges = MathF.Sign(predictedLocation.FlatDirection(Target).Dot(Direction.Cross())) == MathF.Sign(bot.Me.Location.FlatDirection(Target).Dot(Direction.Cross())) && timeLeft > 1.35f + RecoveryTime;
+			Drive.WasteBoost = ArrivalTime < 0 && WasteBoost;
 			Drive.Target = shiftedTarget;
 			Drive.TargetSpeed = targetSpeed;
 			Drive.Run(bot); // Drive towards the shifted target

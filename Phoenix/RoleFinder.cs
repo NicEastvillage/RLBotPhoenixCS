@@ -65,7 +65,7 @@ namespace Phoenix
                 var distToProj = car.Location.Dist(locProjOntoBallToGoal);
                 var angle = (car.Location - Ball.Location).Angle(ballToGoal);
                 var value = distToProj + distToProj * angle / 1.5f + car.Location.Dist(Ball.Location) / 5;
-                if (car == _prevAttacker) value -= 230;
+                if (car == _prevAttacker) value -= 300;
                 else if (car == _prevAssister) value -= 100;
                 if (value < attackerValue)
                 {
@@ -92,7 +92,7 @@ namespace Phoenix
                     continue;
 
                 float value = car.Location.Dist(Ball.Location);
-                if (car == _prevAssister) value -= 200f;
+                if (car == _prevAssister) value -= 300f;
                 if (value < preparerValue)
                 {
                     preparer = car;

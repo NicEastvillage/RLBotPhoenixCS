@@ -250,9 +250,6 @@ namespace Phoenix
                 RunDefendLogic();
             }
 
-            float heightIssues01 = 0.55f * (roughBallLoc.z - Ball.Radius) / Me.Location.Dist(roughBallLoc.Flatten());
-            float speed = Utils.Cap(Utils.Lerp(heightIssues01 - 0.1f, Car.MaxSpeed, 50f), 1f, Car.MaxSpeed);
-
             if (Action is not QuickShot) Action = new QuickShot(Me);
         }
 

@@ -57,7 +57,7 @@ namespace RedUtils
                 // If we have hit the ball, finish this action
                 Finished = true;
             }
-            else if ((ArriveAction.TimeRemaining < 0.2f || bot.Me.Location.Dist(Ball.Location) < 300) && Interruptible)
+            else if (Interruptible && ArriveAction.TimeRemaining < 0.2f || bot.Me.Location.WithY(bot.Me.Location.y / 3).Dist(Ball.Location) < 300)
             {
                 // When we are close enough, dodge into the ball
                 bot.Action = new Dodge(bot.Me.Location.FlatDirection(Ball.Location, surfaceNormal));
