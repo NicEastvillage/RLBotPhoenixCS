@@ -5,10 +5,9 @@ namespace Phoenix
 {
     public enum Role
     {
-        /// <summary>Take a shot or drive towards ball</summary>
+        /// <summary>Take a shot, ball chase, dribble, or challenge</summary>
         Attack,
-        /// <summary>Line up to shoot towards opponent goal or away from our goal.
-        /// Approach if already in position ball.</summary>
+        /// <summary>Prepare to take a shot (at opponent goal or away from our goal) once the attacker loses possession or passes.</summary>
         Assist,
         /// <summary>Get to goal using other half of map and stay close to our goal</summary>
         Defend,
@@ -65,8 +64,8 @@ namespace Phoenix
                 var distToProj = car.Location.Dist(locProjOntoBallToGoal);
                 var angle = (car.Location - Ball.Location).Angle(ballToGoal);
                 var value = distToProj + distToProj * angle / 1.5f + car.Location.Dist(Ball.Location) / 5;
-                if (car == _prevAttacker) value -= 300;
-                else if (car == _prevAssister) value -= 100;
+                if (car == _prevAttacker) value -= 600;
+                else if (car == _prevAssister) value -= 200;
                 if (value < attackerValue)
                 {
                     attacker = car;
@@ -92,7 +91,7 @@ namespace Phoenix
                     continue;
 
                 float value = car.Location.Dist(Ball.Location);
-                if (car == _prevAssister) value -= 300f;
+                if (car == _prevAssister) value -= 400f;
                 if (value < preparerValue)
                 {
                     preparer = car;

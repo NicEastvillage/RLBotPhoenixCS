@@ -24,6 +24,13 @@ namespace RedUtils
 			return (value < min) ? min : (value > max) ? max : value;
 		}
 
+		/// <summary>Sigmoid is mathematical S-shaped function that turns a number into the range -1 to 1.
+		/// A value of 1 becomes 0.73, and 2 becomes 0.88, and 3 becomes 0.95, etc.</summary>
+		public static float Sigmoid(float value)
+		{
+			return 1f / (1f + MathF.Exp(-value));
+		}
+
 		/// <summary>Linerally interpolates between values a and b, using value t
 		/// <para>For instance, if t == 0, a is returned. If t == 1, b is returned</para>
 		/// </summary>

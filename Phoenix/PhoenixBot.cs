@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using RedUtils;
 using RedUtils.Math;
 
-/* 
+/*
  * This is the main file. It contains your bot class. Feel free to change the name!
  * An instance of this class will be created for each instance of your bot in the game.
  * Your bot derives from the "RedUtilsBot" class, contained in the Bot file inside the RedUtils project.
  * The run function listed below runs every tick, and should contain the custom strategy code (made by you!)
  * Right now though, it has a default ball chase strategy. Feel free to read up and use anything you like for your own strategy.
-*/
+ */
 namespace Phoenix
 {
     // Your bot class! :D
@@ -22,6 +21,8 @@ namespace Phoenix
         private RoleFinder _roleFinder = new RoleFinder();
 
         public List<ITargetFactory> WallReflectTargetFactories { get; }
+
+        public bool rightHanded = true;
         
         public PhoenixBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
         {
@@ -62,13 +63,13 @@ namespace Phoenix
             String actionStr = Action != null ? Action.ToString()!.Substring(9) : "null";
             Renderer.Text2D($"{Name,14}: {role}/{actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
             Renderer.Text3D($"{role}/{actionStr}", Me.Location + Vec3.Up * 30, 1, Color.White);
-
+            
             if (IsKickoff && Action == null)
             {
                 Action = _kickOffPicker.PickKickOffAction(this);
                 return;
             }
-
+            
             // TODO Handle other roles
             switch (role)
             {
@@ -89,7 +90,7 @@ namespace Phoenix
 
         private void RunDefaultLogic()
         {
-            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive) && Action?.Interruptible != false);
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive || Action is QuickShot) && Action?.Interruptible != false);
             if (!considerNewActions) return;
             
             Shot shot = null;
@@ -243,6 +244,11 @@ namespace Phoenix
 
             float roughEta = Me.Location.Dist(Ball.Location) / 2300f;
             Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
+            Surface surface = Field.NearestSurface(roughBallLoc);
+            if (surface.Key != "Ground" && MathF.Sign(roughBallLoc.y) == Field.Side(Team))
+            {
+                RunDefendLogic();
+            }
             
             // Avoid chasing towards own goal // TODO Improve detection and backup plan 
             if ((OurGoal.Location - Me.Location).Angle(OurGoal.Location - Ball.Location) < 0.1f)
@@ -255,7 +261,32 @@ namespace Phoenix
 
         private void RunAssistLogic()
         {
-            RunDefaultLogic();
+            var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive || Action is QuickShot) && Action?.Interruptible != false);
+            if (!considerNewActions) return;
+            
+            // Assume we are not terribly out of position
+            // TODO Better detection of the game situation (offence vs defensive)
+            if ((Ball.Prediction.AtTime(Game.Time + 0.25f)?.Location.y ?? Ball.Location.y) * Field.Side(Team) < 0)
+            {
+                // Assist offensively
+                // Drive in 8-shape halfway between ball and own goal
+
+                Vec3 center8 = (Ball.Location + OurGoal.Location).Flatten() / 2;
+                Vec3 dir = OurGoal.Location.Direction(center8);
+                Vec3 target =  center8 - dir * 500 + dir.Rotate90() * 900 * (rightHanded ? 1 : -1);
+                if (Me.Location.Dist(target) < 300) rightHanded = !rightHanded;
+                if (Action is BoostCollectingDrive drive)
+                {
+                    drive.FinalDestination = target;
+                    drive.ArriveAction.AllowFlipping = false;
+                }
+                else Action = new BoostCollectingDrive(Me, target);
+            }
+            else
+            {
+                // Assist defensively
+                RunDefaultLogic(); // TODO
+            }
         }
 
         private void RunDefendLogic()
@@ -263,17 +294,37 @@ namespace Phoenix
             var considerNewActions = Action == null || ((Action is Drive || Action is BoostCollectingDrive || Action is QuickShot) && Action?.Interruptible != false);
             if (!considerNewActions) return;
 
-            Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.91f) / 2;
-            Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
-            float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
-            Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
-
-            // TODO Need faster-driving version of BoostCollectingDrive
-            if (Action is BoostCollectingDrive drive)
+            float myDistToGoal = Me.Location.Dist(OurGoal.Location);
+            
+            if (myDistToGoal < 1100)
             {
-                drive.FinalDestination = fallBackLoc;
+                // Protect goal (focus on facing ball)
+                Vec3 entry = Ball.Location.Dist(OurGoal.Location) < 800 ? Ball.Location : OurGoal.Location + (Ball.Location - OurGoal.Location).Rescale(800);
+                float angle = Me.Forward.Flatten().Angle(entry - Me.Location);
+                bool backwards = rightHanded && Me.Forward.Dot(Me.Location.Direction(entry)) > 0.2f;
+                Action = null;
+                Controller.Handbrake = false;
+                AimAt(entry, backwards: backwards);
+                Throttle(Math.Min(myDistToGoal / 10 + angle * 300 * (backwards ? -1 : 1), 800f));
+                if (myDistToGoal < 500) rightHanded = Math.Floor(Game.Time / 6) % 2 == 0;
+                Renderer.Line3D(Me.Location, entry, Color.White);
+                Renderer.Octahedron(entry, 30, Color.MediumPurple);
             }
-            else Action = new BoostCollectingDrive(Me, fallBackLoc);
+            else
+            {
+                // Fall back
+                Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.91f) / 2;
+                Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
+                float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
+                Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
+            
+                // TODO Need faster-driving version of BoostCollectingDrive
+                if (Action is BoostCollectingDrive drive)
+                {
+                    drive.FinalDestination = fallBackLoc;
+                }
+                else Action = new BoostCollectingDrive(Me, fallBackLoc);                
+            }
         }
     }
 }

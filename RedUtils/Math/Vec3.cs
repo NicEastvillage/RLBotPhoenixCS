@@ -357,6 +357,12 @@ namespace RedUtils.Math
 			return Flatten(rotationAxis) * MathF.Cos(angle) + Flatten(rotationAxis).Cross(rotationAxis).Rescale(Flatten(rotationAxis).Length()) * MathF.Sin(angle) + rotationAxis * Dot(rotationAxis);
 		}
 
+		/// <summary>Return this vector rotated 90 degrees counter-clockwise around the up-axis.</summary>
+		public Vec3 Rotate90()
+		{
+			return new Vec3(y, -x, z);
+		}
+
 		/// <summary>Returns the distance to the line segment stretching from a to b</summary>
 		public Vec3 ProjToLineSegment(Vec3 a, Vec3 b)
 		{
