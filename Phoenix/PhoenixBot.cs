@@ -285,7 +285,7 @@ namespace Phoenix
             else
             {
                 // Assist defensively
-                RunDefaultLogic(); // TODO
+                RunDefendLogic(); // TODO
             }
         }
 
@@ -299,13 +299,14 @@ namespace Phoenix
             if (myDistToGoal < 1100)
             {
                 // Protect goal (focus on facing ball)
-                Vec3 entry = Ball.Location.Dist(OurGoal.Location) < 800 ? Ball.Location : OurGoal.Location + (Ball.Location - OurGoal.Location).Rescale(800);
+                Vec3 entry = OurGoal.Location.Dist(Ball.Location) > 500 ? Utils.Lerp(0.15f, OurGoal.Location + (Ball.Location.Flatten() - OurGoal.Location).Rescale(500), Ball.Location) : Ball.Location.Flatten();
                 float angle = Me.Forward.Flatten().Angle(entry - Me.Location);
-                bool backwards = rightHanded && Me.Forward.Dot(Me.Location.Direction(entry)) > 0.2f;
+                float focus01 = 1f - (angle / MathF.PI);
+                Vec3 focusPoint = Utils.Lerp(focus01, OurGoal.Location, entry);
                 Action = null;
                 Controller.Handbrake = false;
-                AimAt(entry, backwards: backwards);
-                Throttle(Math.Min(myDistToGoal / 10 + angle * 300 * (backwards ? -1 : 1), 800f));
+                AimAt(focusPoint);
+                Throttle(Math.Min(myDistToGoal / 6 + angle * 300, 800f));
                 if (myDistToGoal < 500) rightHanded = Math.Floor(Game.Time / 6) % 2 == 0;
                 Renderer.Line3D(Me.Location, entry, Color.White);
                 Renderer.Octahedron(entry, 30, Color.MediumPurple);
@@ -313,7 +314,7 @@ namespace Phoenix
             else
             {
                 // Fall back
-                Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.91f) / 2;
+                Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.89f) / 2;
                 Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
                 float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
                 Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;

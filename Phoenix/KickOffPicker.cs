@@ -69,16 +69,33 @@ namespace Phoenix
         public IAction PickKickOffAction(RUBot bot)
         {
             // Use left-goes protocol
-            Car kicker = Cars.AllCars
-                .FindAll(car => car.Team == bot.Me.Team)
+            List<Car> alliesByDist = Cars.AlliesAndMe
                 .OrderBy(car => car.Location.Length() + MathF.Sign(car.Location.x * Field.Side(car.Team)))
-                .FirstOrDefault();
+                .ToList();
 
-            if (kicker != bot.Me)
+            if (alliesByDist[0] != bot.Me)
             {
                 _latest = null;
                 // Get boost instead
-                return new GetBoost(bot.Me, interruptible: false);
+                // Be intelligent about it if 3rd man (don't steal 2nd man's boost)
+                if (alliesByDist.IndexOf(bot.Me) == 1)
+                {
+                    return new GetBoost(bot.Me, interruptible: false);
+                }
+
+                if (alliesByDist.IndexOf(bot.Me) == 2)
+                {
+                    int boostIndex = Field.Boosts.FindIndex(pad =>
+                        pad.IsLarge
+                        && MathF.Sign(pad.Location.x) != MathF.Sign(alliesByDist[1].Location.x)
+                        && MathF.Sign(pad.Location.y) == MathF.Sign(alliesByDist[2].Location.y)
+                        && MathF.Abs(pad.Location.y) >= 400
+                    );
+                    return new GetBoost(bot.Me, interruptible: false, boostIndex: boostIndex);
+                }
+
+                // 4 or more players on my team
+                return new QuickShot(bot.Me);
             }
 
             // Find the available options

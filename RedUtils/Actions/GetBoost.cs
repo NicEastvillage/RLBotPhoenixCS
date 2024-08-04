@@ -23,7 +23,7 @@ namespace RedUtils
 
 		/// <summary>Initializes a GetBoost.</summary>
 		/// <param name="boostIndex">Index of boost pad to go for. If set to -1 it will attempt to find the best big boost pad automatically</param>
-		/// <param name="interruptible">Whether or not this shot can be interrupted</param>
+		/// <param name="interruptible">Whether or not this action can be interrupted</param>
 		public GetBoost(Car car, int boostIndex = -1, bool interruptible = true)
 		{
 			Finished = false;
