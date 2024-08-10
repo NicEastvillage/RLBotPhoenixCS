@@ -284,8 +284,26 @@ namespace Phoenix
             }
             else
             {
-                // Assist defensively
-                RunDefendLogic(); // TODO
+                Vec3 proj = Me.Location.ProjToLineSegment(OurGoal.Location, Ball.Location);
+                float distToProj = Me.Location.Dist(proj);
+                if (distToProj < 100 + OurGoal.Location.Dist(Ball.Location) / 10f)
+                {
+                    // Approach
+                    Vec3 target = Ball.Location + Ball.Velocity * 0.1f;
+                    if (Action is Drive drive)
+                    {
+                        drive.Target = target;
+                        drive.TargetSpeed = 1000f;
+                        drive.AllowDodges = false;
+                        drive.WasteBoost = false;
+                    }
+                    else Action = new Drive(Me, target, 1000f, false);
+                }
+                else
+                {
+                    // Rotate
+                    RunDefendLogic();                    
+                }
             }
         }
 

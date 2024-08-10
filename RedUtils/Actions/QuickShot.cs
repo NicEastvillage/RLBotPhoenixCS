@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using RedUtils.Math;
 using RLBotDotNet;
 
@@ -38,7 +40,9 @@ namespace RedUtils
             float roughEta = bot.Me.Location.Dist(Ball.Location) / 2300f;
             Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
             Vec3 behindBall = roughBallLoc + bot.Me.Location.Direction(roughBallLoc) * 1000f;
-            Target = behindBall.Rotate(-0.1f * MathF.Sign(behindBall.x) * System.Math.Sign(bot.Team));
+            Target = Utils.Lerp(0.15f, behindBall, bot.TheirGoal.Location);
+            bot.Renderer.Octahedron(behindBall, 90, Color.Orange);
+            bot.Renderer.Octahedron(Target, 100, Color.Red);
             
             // Calculates the direction we should shoot in
             Vec3 shotDirection = roughBallLoc.Direction(Target);

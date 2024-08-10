@@ -9,6 +9,8 @@ namespace RedUtils
     /// </summary>
     public struct BallPrediction
     {
+        public const float RATE = 120f;
+        
         public BallSlice this[int index] { get { return Slices[index]; } }
 
         /// <summary>A list of all of the future ball slices</summary>
@@ -25,15 +27,15 @@ namespace RedUtils
         /// <summary>Finds the first ball slice that fits the given predicate 
         /// <para>This function is more effecient then the normal "Find" function, and accounts for scoring</para>
         /// </summary>
-        public BallSlice Find(Predicate<BallSlice> predicate)
+        public BallSlice Find(Predicate<BallSlice> predicate, int stepSize = 6)
         {
             if (Length > 0)
             {
-                for (int i = 6; i < Length; i += 6)
+                for (int i = stepSize; i < Length; i += stepSize)
                 {
                     if (predicate(Slices[i]))
                     {
-                        for (int j = i - 6; j < i; j++)
+                        for (int j = i - stepSize; j < i; j++)
                         {
                             if (MathF.Abs(Slices[j].Location.y) > 5250) break;
                             if (predicate(Slices[j]))
