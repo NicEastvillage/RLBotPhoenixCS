@@ -24,6 +24,7 @@ namespace RedUtils
 		/// <returns>The current forward speed of the car</returns>
 		public float Throttle(float targetSpeed, bool backwards = false)
 		{
+			if (float.IsNaN(targetSpeed)) return 0f;
 			float carSpeed = Me.Local(Me.Velocity).x; // The car's speed in the forward direction
 			float speedDiff = (targetSpeed * (backwards ? -1 : 1)) - carSpeed;
 			Controller.Throttle = Utils.Cap(MathF.Pow(speedDiff, 2) * MathF.Sign(speedDiff) / 1000, -1, 1);

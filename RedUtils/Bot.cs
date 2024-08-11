@@ -139,38 +139,48 @@ namespace RedUtils
 			UpdateDeltaTime();
 			
 			// Resets the Controller every tick
-			Controller = new Controller(); 
+			Controller = new Controller();
 
-			if (!_ready)
+			try
 			{
-				// Gets the packet ready for the first time during startup
-				GetReady(packet); 
-			}
-			// Proccesses the packet so that data is up to date during this frame
-			Process(packet);
-
-			// Runs our strategy code
-			Run(); 
-
-			// if there is an action to execute...
-			if (Action != null)
-			{
-				Action.Run(this); // execute it!
-
-				// If the ball hasn't been touched, set it to -1, so we don't get errors.
-				float latestTouchTime = Ball.LatestTouch == null ? -1 : Ball.LatestTouch.Time; 
-				if (Action.Finished || (_lastTouchTime != latestTouchTime && Action.Interruptible) || Me.IsDemolished) 
+				if (!_ready)
 				{
-					// If the action has completed, or the ball has been touched and the action is interruptible, reset the action
-					_lastTouchTime = latestTouchTime;
-					Action = null;
+					// Gets the packet ready for the first time during startup
+					GetReady(packet);
 				}
+
+				// Proccesses the packet so that data is up to date during this frame
+				Process(packet);
+
+				// Runs our strategy code
+				Run();
+
+				// if there is an action to execute...
+				if (Action != null)
+				{
+					Action.Run(this); // execute it!
+
+					// If the ball hasn't been touched, set it to -1, so we don't get errors.
+					float latestTouchTime = Ball.LatestTouch == null ? -1 : Ball.LatestTouch.Time;
+					if (Action.Finished || (_lastTouchTime != latestTouchTime && Action.Interruptible) ||
+					    Me.IsDemolished)
+					{
+						// If the action has completed, or the ball has been touched and the action is interruptible, reset the action
+						_lastTouchTime = latestTouchTime;
+						Action = null;
+					}
+				}
+
+				// East addition: Disallow all boosting when the ball is far away and on the enemy half
+				bool boostOk = IsKickoff || (Me.Location.Dist(Ball.Location) < 5000 &&
+				                             System.Math.Sign(Ball.Location.y) == System.Math.Sign(OurGoal.Location.y));
+				Controller.Boost = Controller.Boost && boostOk;
 			}
-			
-			// East addition: Disallow all boosting when the ball is far away and one the enemy half
-			bool boostOk = IsKickoff || (Me.Location.Dist(Ball.Location) < 5000 &&
-			               System.Math.Sign(Ball.Location.y) == System.Math.Sign(OurGoal.Location.y));
-			Controller.Boost = Controller.Boost && boostOk;
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				Controller = new Controller();
+			}
 
 			// returns our inputs to RLBot
 			return Controller; 

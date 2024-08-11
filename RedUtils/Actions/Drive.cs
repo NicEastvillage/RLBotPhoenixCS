@@ -420,7 +420,7 @@ namespace RedUtils
 			angle = Utils.Cap(angle, 0, 2 * MathF.PI);
 
 			// Returns an estimate of the actual distance needed to drive, including the turn
-			return MathF.Sqrt(MathF.Max(MathF.Pow(distance, 2) - MathF.Pow(radius, 2), 0)) + radius * angle;
+			return MathF.Sqrt(MathF.Max(distance * distance - radius * radius, 0)) + radius * angle;
 		}
 
 		/// <summary>Estimates how long it should take do drive to a given target, assuming we drive at max speed</summary>

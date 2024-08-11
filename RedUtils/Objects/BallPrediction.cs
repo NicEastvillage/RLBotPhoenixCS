@@ -15,7 +15,7 @@ namespace RedUtils
 
         /// <summary>A list of all of the future ball slices</summary>
         public BallSlice[] Slices;
-        public int Length => Slices.Length;
+        public int Length => Slices?.Length ?? 0;
 
         public BallPrediction(rlbot.flat.BallPrediction ballPrediction)
         {
@@ -73,15 +73,14 @@ namespace RedUtils
             return null;
         }
 
-        public BallSlice AtTime(float time)
+        public BallSlice InTime(float delta)
         {
             if (Length == 0) return null;
             
             BallSlice first = Slices[0];
 
-            float delta = time - first.Time;
-
-            if (delta < 0 || 6 <= delta) return null;
+            if (delta < 0) return Slices[0];
+            if (delta >= 6) return Slices[^1];
 
             return Slices[Utils.Cap((int)(360 * delta / 6f), 0, Length - 1)];
         }

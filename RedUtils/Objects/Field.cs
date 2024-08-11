@@ -170,11 +170,14 @@ namespace RedUtils
 		public static Surface NearestSurface(Vec3 pos)
 		{
 			Surface closestSurface = DrivableSurfaces.First().Value;
+			float bestDist = float.MaxValue;
 			foreach (Surface surface in DrivableSurfaces.Values)
 			{
-				if (pos.Dist(closestSurface.Limit(pos)) > pos.Dist(surface.Limit(pos)))
+				float dist = pos.Dist(surface.Limit(pos));
+				if (bestDist > dist)
 				{
 					closestSurface = surface;
+					bestDist = dist;
 				}
 			}
 

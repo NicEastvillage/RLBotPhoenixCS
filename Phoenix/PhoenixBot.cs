@@ -243,7 +243,7 @@ namespace Phoenix
             }
 
             float roughEta = Me.Location.Dist(Ball.Location) / 2300f;
-            Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
+            Vec3 roughBallLoc = Ball.Prediction.InTime(roughEta)?.Location ?? Ball.Location;
             Surface surface = Field.NearestSurface(roughBallLoc);
             if (surface.Key != "Ground" && MathF.Sign(roughBallLoc.y) == Field.Side(Team))
             {
@@ -266,7 +266,7 @@ namespace Phoenix
             
             // Assume we are not terribly out of position
             // TODO Better detection of the game situation (offence vs defensive)
-            if ((Ball.Prediction.AtTime(Game.Time + 0.25f)?.Location.y ?? Ball.Location.y) * Field.Side(Team) < 0)
+            if ((Ball.Prediction.InTime(0.25f)?.Location.y ?? Ball.Location.y) * Field.Side(Team) < 0)
             {
                 // Assist offensively
                 // Drive in 8-shape halfway between ball and own goal

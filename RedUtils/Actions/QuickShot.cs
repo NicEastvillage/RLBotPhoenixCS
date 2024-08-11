@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using RedUtils.Math;
 using RLBotDotNet;
+using RLBotDotNet.Renderer;
 
 namespace RedUtils
 {
@@ -22,6 +24,8 @@ namespace RedUtils
         /// <summary>Keeps track of the last time the ball was touched</summary>
         private float _latestTouchTime = -1;
 
+        private float _predTao = -1f;
+
         public QuickShot(Car car)
         {
             Interruptible = true;
@@ -37,22 +41,23 @@ namespace RedUtils
                 _latestTouchTime = Ball.LatestTouch.Time;
 
             // Find some reasonable target
-            float roughEta = bot.Me.Location.Dist(Ball.Location) / 2300f;
-            Vec3 roughBallLoc = Ball.Prediction.AtTime(Game.Time + roughEta)?.Location ?? Ball.Location;
-            Vec3 behindBall = roughBallLoc + bot.Me.Location.Direction(roughBallLoc) * 1000f;
+            var (eta, ballLoc) = GetPredBallLocBruteforce(bot);
+            Vec3 behindBall = ballLoc + bot.Me.Location.Direction(ballLoc) * 1000f;
             Target = Utils.Lerp(0.15f, behindBall, bot.TheirGoal.Location);
-            bot.Renderer.Octahedron(behindBall, 90, Color.Orange);
-            bot.Renderer.Octahedron(Target, 100, Color.Red);
+            bot.Renderer.Polyline3D(new List<Vec3> { Ball.Location, ballLoc, Target }, Color.Gray);
+            bot.Renderer.Octahedron(ballLoc, 200, Color.Orange);
+            bot.Renderer.CrossAngled(Target, 100, Color.Orange);
             
             // Calculates the direction we should shoot in
-            Vec3 shotDirection = roughBallLoc.Direction(Target);
+            Vec3 shotDirection = ballLoc.Direction(Target);
             // Gets the normal of the surface closest to the ball
-            Vec3 surfaceNormal = Field.NearestSurface(roughBallLoc).Normal;
+            Vec3 surfaceNormal = Field.NearestSurface(ballLoc).Normal;
 
             // Updates and runs the arrive action
-            ArriveAction.Target = roughBallLoc;
+            ArriveAction.Target = ballLoc;
             ArriveAction.Direction = shotDirection;
             ArriveAction.Run(bot);
+            bot.Throttle(bot.Me.Location.Dist(ballLoc) / MathF.Max(eta, 0.01f));
 
             // This action is only interruptible when the arrive action is
             Interruptible = ArriveAction.Interruptible;
@@ -61,11 +66,46 @@ namespace RedUtils
                 // If we have hit the ball, finish this action
                 Finished = true;
             }
-            else if (Interruptible && ArriveAction.TimeRemaining < 0.2f || bot.Me.Location.WithY(bot.Me.Location.y / 3).Dist(Ball.Location) < 300)
+            else if (Interruptible && (ArriveAction.TimeRemaining + eta) / 2f < 0.2f || bot.Me.Location.WithZ(bot.Me.Location.z / 3).Dist(Ball.Location) < 300f)
             {
                 // When we are close enough, dodge into the ball
-                bot.Action = new Dodge(bot.Me.Location.FlatDirection(Ball.Location, surfaceNormal));
+                Vec3 dodgeLoc = Ball.Prediction.InTime((ArriveAction.TimeRemaining + eta) / 3f)?.Location ?? Ball.Location;
+                bot.Action = new Dodge(bot.Me.Location.FlatDirection(dodgeLoc, surfaceNormal));
             }
         }
-	}
+
+        private (float, Vec3) GetPredBallLocBruteforce(RUBot bot)
+        {
+            if (Ball.Prediction.Length == 0) return (bot.Me.Location.Dist(Ball.Location) / Car.MaxSpeed, Ball.Location);
+            if (_predTao < 0) _predTao = Game.Time;
+
+            const int stepCount = 25;
+            const float stepSize = 2f / 120f;
+            float eta = MathF.Max(Game.Time, _predTao - stepSize * (stepCount - 1) / 2f) - Game.Time;
+            for (int i = 0; i < stepCount; i++, eta += stepSize)
+            {
+                Vec3 loc = Ball.Prediction.InTime(eta).Location;
+                if (bot.Me.Location.Dist(loc) < eta * Car.MaxSpeed)
+                {
+                    break; // Found reachable
+                }
+            }
+            
+            bot.Renderer.Octahedron(Ball.Prediction.InTime(eta).Location, 180, Color.Red);
+
+            // Wait extra for it to get close to some surface
+            for (; eta < 6f; eta += stepSize)
+            {
+                Vec3 loc = Ball.Prediction.InTime(eta).Location;
+                Surface surface = Field.NearestSurface(loc);
+                if (surface.Limit(loc).DistSquared(loc) <= 220f * 220f)
+                {
+                    break;
+                }
+            }
+            
+            _predTao = Game.Time + eta;
+            return (eta, Ball.Prediction.InTime(eta).Location);
+        }
+    }
 }
