@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using RedUtils;
 using RedUtils.Actions.KickOffs;
@@ -149,6 +150,8 @@ namespace Phoenix
         /// <summary>Renders the current state of the KickOffPicker for debugging</summary>
         public void DrawSummary(ExtendedRenderer draw)
         {
+            draw.Color = Color.White;
+            
             float x = 200;
             float y = 40;
             float dy = 18;

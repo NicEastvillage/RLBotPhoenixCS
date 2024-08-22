@@ -229,6 +229,10 @@ namespace RedUtils
 					// If it's a speedflip, add a little extra speed
 					bot.Throttle(TargetSpeed + 500, Backwards);
 				}
+				else if (Action is Dodge)
+				{
+					bot.Controller.Boost = bot.Me.Forward.Angle(Target - bot.Me.Location) < 0.1f;
+				}
 			}
 			
 			// Prevents this action from being interrupted during a dodge

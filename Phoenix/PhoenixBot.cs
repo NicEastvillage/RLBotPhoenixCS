@@ -19,6 +19,7 @@ namespace Phoenix
         private KickOffPicker _kickOffPicker = new KickOffPicker();
         private DribbleDetector _dribbleDetector = new DribbleDetector();
         private RoleFinder _roleFinder = new RoleFinder();
+        private BoostNetwork _boostNetwork = new BoostNetwork();
 
         public List<ITargetFactory> WallReflectTargetFactories { get; }
 
@@ -53,7 +54,7 @@ namespace Phoenix
         public override void Run()
         {
             //GameAnalysis.Update(this);
-            //BoostNetwork.FindPath(Me, OurGoal.Location, Renderer);
+            //_boostNetwork.Draw(Renderer);
             _kickOffPicker.Evaluate(this);
             _kickOffPicker.DrawSummary(Renderer);
 
@@ -327,15 +328,24 @@ namespace Phoenix
                 Throttle(Math.Min(myDistToGoal / 6 + angle * 300, 800f));
                 if (myDistToGoal < 500) rightHanded = Math.Floor(Game.Time / 6) % 2 == 0;
                 Renderer.Line3D(Me.Location, entry, Color.White);
-                Renderer.Octahedron(entry, 30, Color.MediumPurple);
+                Renderer.CrossAngled(entry, 30, Color.MediumPurple);
             }
             else
             {
-                // Fall back
-                Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.89f) / 2;
-                Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
-                float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
-                Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
+                // // Fall back
+                // Vec3 halfHomeLoc = (Me.Location + OurGoal.Location * 0.89f) / 2;
+                // Vec3 ballSideLoc = Ball.Location.WithX(MathF.Sign(Ball.Location.x) * (Field.Width / 2 - 250)).Flatten();
+                // float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
+                // Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
+                
+                List<Vec3> path = _boostNetwork.FindRotation(Me.Location, OurGoal.Location);
+                Renderer.Polyline3D(path, Color.Gray);
+                
+                // Follow path
+                Vec3 nextDir = path.Count <= 2 ? path[0].Direction(path[1]) : path[1].Direction(path[2]);
+                Vec3 target = ArrivalCurve.GetMidPoint(Me.Location, path[1] + (2500f - Me.Location.Dist(path[1])) * nextDir, nextDir);
+                Vec3 fallBackLoc = target + Me.Location.Direction(target) * 1000f;
+                Renderer.CrossAngled(target, 70, Color.GreenYellow);
             
                 // TODO Need faster-driving version of BoostCollectingDrive
                 if (Action is BoostCollectingDrive drive)

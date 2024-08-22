@@ -57,7 +57,7 @@ namespace RedUtils
             ArriveAction.Target = ballLoc;
             ArriveAction.Direction = shotDirection;
             ArriveAction.Run(bot);
-            bot.Throttle(bot.Me.Location.Dist(ballLoc) / MathF.Max(eta, 0.01f));
+            bot.Throttle(bot.Me.Location.Dist(ballLoc.WithZ(0f)) / MathF.Max(eta, 0.01f));
 
             // This action is only interruptible when the arrive action is
             Interruptible = ArriveAction.Interruptible;
@@ -98,7 +98,7 @@ namespace RedUtils
             {
                 Vec3 loc = Ball.Prediction.InTime(eta).Location;
                 Surface surface = Field.NearestSurface(loc);
-                if (surface.Limit(loc).DistSquared(loc) <= 220f * 220f)
+                if (surface.Limit(loc).DistSquared(loc) <= 180f * 180f)
                 {
                     break;
                 }
