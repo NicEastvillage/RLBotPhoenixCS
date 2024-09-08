@@ -169,9 +169,10 @@ namespace RedUtils
             }
         }
 
-        public List<Vec3> FindRotation(Vec3 start, Vec3 end)
+        public List<Vec3> FindRotation(Car car, Vec3 end)
         {
             // A* algorithm
+            Vec3 start = car.Location;
             
             foreach (Node node in _nodes)
             {
@@ -211,7 +212,8 @@ namespace RedUtils
 
                 List<int> neighbours = index != -1
                     ? _nodes[index].Neighbours
-                    : _nodes.Where(n => 700f < start.Dist(n.Location) && start.Dist(n.Location) < 2000f)
+                    // Start neighbours
+                    : _nodes.Where(n => 700f * Utils.Cap(car.Forward.Angle(n.Location - start) * 0.99f, 0f, 1f) < start.Dist(n.Location) && start.Dist(n.Location) < 2000f)
                         .Select(n => n.Index)
                         .ToList();
                 if (index == -1) neighbours.Add(-2);

@@ -276,12 +276,12 @@ namespace Phoenix
                 Vec3 dir = OurGoal.Location.Direction(center8);
                 Vec3 target =  center8 - dir * 500 + dir.Rotate90() * 900 * (rightHanded ? 1 : -1);
                 if (Me.Location.Dist(target) < 300) rightHanded = !rightHanded;
-                if (Action is BoostCollectingDrive drive)
+                if (Action is Drive drive)
                 {
-                    drive.FinalDestination = target;
-                    drive.ArriveAction.AllowFlipping = false;
+                    drive.Target = target;
+                    drive.AllowDodges = false;
                 }
-                else Action = new BoostCollectingDrive(Me, target);
+                else Action = new Drive(Me, target, allowDodges: false);
             }
             else
             {
@@ -338,21 +338,37 @@ namespace Phoenix
                 // float homeSickness01 = Me.Location.Dist(OurGoal.Location * 0.9f) / Field.Length;
                 // Vec3 fallBackLoc = halfHomeLoc + ballSideLoc.Direction(halfHomeLoc) * Field.Width * homeSickness01 / 2;
                 
-                List<Vec3> path = _boostNetwork.FindRotation(Me.Location, OurGoal.Location);
+                List<Vec3> path = _boostNetwork.FindRotation(Me, OurGoal.Location);
                 Renderer.Polyline3D(path, Color.Gray);
-                
-                // Follow path
-                Vec3 nextDir = path.Count <= 2 ? path[0].Direction(path[1]) : path[1].Direction(path[2]);
-                Vec3 target = ArrivalCurve.GetMidPoint(Me.Location, path[1] + (2500f - Me.Location.Dist(path[1])) * nextDir, nextDir);
+
+                Vec3 last = path.Count <= 2 ? path[1] : path[2];
+                Spline spline = new(path[0], path[0], path[1], last); // Repeating p0 is intentional
+                spline.AdjustForBoost();
+                spline.Draw(Renderer);
+                float lookahead = 555f;
+                if (spline.ApproxLength() <= lookahead)
+                {
+                    lookahead -= spline.ApproxLength();
+                    spline = new(path[0], path[1], last, last);
+                    spline.AdjustForBoost();
+                    spline.Draw(Renderer);
+                }
+                Vec3 target = spline.Eval(lookahead / spline.ApproxLength());
                 Vec3 fallBackLoc = target + Me.Location.Direction(target) * 1000f;
-                Renderer.CrossAngled(target, 70, Color.GreenYellow);
+                
+                // // Follow path
+                // Vec3 nextDir = path.Count <= 2 ? path[0].Direction(path[1]) : path[1].Direction(path[2]);
+                // Vec3 target = ArrivalCurve.GetMidPoint(Me.Location, path[1] + (2500f - Me.Location.Dist(path[1])) * nextDir, nextDir);
+                // Vec3 fallBackLoc = target + Me.Location.Direction(target) * 1000f;
+                // Renderer.CrossAngled(target, 70, Color.GreenYellow);
             
                 // TODO Need faster-driving version of BoostCollectingDrive
-                if (Action is BoostCollectingDrive drive)
+                if (Action is Drive drive)
                 {
-                    drive.FinalDestination = fallBackLoc;
+                    drive.Target = fallBackLoc;
+                    drive.Backwards = false;
                 }
-                else Action = new BoostCollectingDrive(Me, fallBackLoc);                
+                else Action = new Drive(Me, fallBackLoc) { Backwards = false };
             }
         }
     }
