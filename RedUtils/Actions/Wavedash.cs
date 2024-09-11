@@ -10,6 +10,8 @@ namespace RedUtils
 		public bool Finished { get; private set; }
 		/// <summary>Wavedashes aren't interruptible, so this will always be false</summary>
 		public bool Interruptible { get; private set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>The direction we plan to wavedash in</summary>
 		public Vec3 Direction;

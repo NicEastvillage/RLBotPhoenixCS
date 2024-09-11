@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using RedUtils;
-using RedUtils.Math;
 using Color = System.Drawing.Color;
 
-namespace Phoenix;
+namespace RedUtils.Math;
 
 public class Spline
 {

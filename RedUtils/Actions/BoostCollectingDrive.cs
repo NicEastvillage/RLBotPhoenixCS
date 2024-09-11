@@ -13,6 +13,8 @@ namespace RedUtils
 
         /// <summary>Whether or not this action can be interrupted</summary>
         public bool Interruptible { get; set; }
+        
+        public bool Navigational => true;
 
         /// <summary>The boost pad we are going to grab next</summary>
         public Boost ChosenBoost;

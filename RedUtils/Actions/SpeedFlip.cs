@@ -15,6 +15,8 @@ namespace RedUtils
 		/// <summary>Whether or not we have finished this speedflip</summary>
 		public bool Finished
 		{ get; set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>The direction we plan to speed-flip in</summary>
 		public Vec3 Direction;

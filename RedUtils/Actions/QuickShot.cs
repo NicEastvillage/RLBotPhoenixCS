@@ -15,6 +15,8 @@ namespace RedUtils
         public bool Finished { get; private set; }
         /// <summary>Whether this action can be interrupted</summary>
         public bool Interruptible { get; private set; }
+        
+        public bool Navigational => false;
 
         /// <summary>The location we're going to shoot at. Often just a point behind the ball</summary>
         public Vec3 Target;

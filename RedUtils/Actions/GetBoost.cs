@@ -10,6 +10,8 @@ namespace RedUtils
 		public bool Finished { get; set; }
 		/// <summary>Whether or not this action can be interrupted</summary>
 		public bool Interruptible { get; set; }
+		
+		public bool Navigational => true;
 
 		/// <summary>The index of the boost pad we are going to grab</summary>
 		public int BoostIndex = 0;

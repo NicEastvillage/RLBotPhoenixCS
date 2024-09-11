@@ -15,6 +15,8 @@ namespace RedUtils.Actions.KickOffs
         /// <summary>Whether or not the kickoff period has ended</summary>
         public bool Finished
         { get; set; } = false;
+        
+        public bool Navigational => false;
 
         /// <summary>Which type of kickoff spawn location it is</summary>
         private readonly KickOffType _type;

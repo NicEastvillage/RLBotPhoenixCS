@@ -11,6 +11,8 @@ namespace RedUtils.Actions.KickOffs
 		/// <summary>Whether or not the kickoff period has ended</summary>
 		public bool Finished
 		{ get; set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>A random number close to 0.5</summary>
 		private float _rand1;

@@ -10,6 +10,8 @@ namespace RedUtils
 		public bool Finished { get; private set; }
 		/// <summary>Dodges aren't interruptible, so this will always be false</summary>
 		public bool Interruptible { get; private set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>The direction we want to dodge in</summary>
 		public Vec3 Direction { get; set; }

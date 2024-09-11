@@ -13,6 +13,8 @@ namespace RedUtils
 		public bool Finished { get; private set; }
 		/// <summary>Half-flips aren't interruptible, so this will always be false</summary>
 		public bool Interruptible { get; private set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>Whether or not we are going to jump before half-flipping</summary>
 		private bool _jumping = true;

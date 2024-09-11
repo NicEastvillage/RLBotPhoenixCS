@@ -11,6 +11,8 @@ namespace RedUtils
 		/// <summary>Whether or not this function is interruptible</summary>
 		public bool Interruptible { get; private set; }
 
+		public bool Navigational => true;
+
 		/// <summary>The destination the car will arrive at</summary>
 		public Vec3 Target;
 		/// <summary>The direction the car will try to face at arrival</summary>

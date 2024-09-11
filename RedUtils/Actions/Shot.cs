@@ -11,6 +11,8 @@ namespace RedUtils
 		public abstract bool Finished { get; internal set; }
 		/// <summary>Whether or not the shot can be interrupted</summary>
 		public abstract bool Interruptible { get; internal set; }
+		
+		public bool Navigational => false;
 
 		/// <summary>The future ball state at which time we are planning to hit the shot</summary>
 		public abstract BallSlice Slice { get; internal set; }
