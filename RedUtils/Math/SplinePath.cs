@@ -31,7 +31,7 @@ public class SplinePath
         -1f, 3f, -3f, 1f
     ) * (1f/2f);
 
-    private static readonly Matrix4x4 MyMat = MatBSpline * 0.5f + MatCatmullRom * 0.5f;
+    private static readonly Matrix4x4 MyMat = MatBSpline * 0.4f + MatCatmullRom * 0.6f;
     
     public IReadOnlyList<Vec3> ControlPoints { get; }
     public int SegmentCount => ControlPoints.Count - 1;
