@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using RedUtils.Math;
-using rlbot.flat;
-using RLBotDotNet.Renderer;
 using Color = System.Drawing.Color;
 
 namespace RedUtils.Actions;

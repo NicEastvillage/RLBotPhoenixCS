@@ -42,7 +42,7 @@ public class Spline
 
     public void AdjustForBoost()
     {
-        // A B-Spline does not go through the control points, but if notch the controls points and evaluate
+        // A B-Spline does not go through the control points, but we if notch the controls points and evaluate
         // again, then we are close to
         _points[1] += 0.25f * (_points[1] - EvalWith(0f, _matBSpline));
         _points[2] += 0.25f * (_points[2] - EvalWith(1f, _matBSpline));

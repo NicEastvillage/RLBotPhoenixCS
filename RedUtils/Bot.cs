@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Timers;
 using System.Collections.Generic;
-using RedUtils.Math;
-using RLBotDotNet;
-using rlbot.flat;
-using Color = System.Drawing.Color;
+using RLBot.Flat;
+using RLBot.Manager;
 
 namespace RedUtils
 {
@@ -20,7 +17,7 @@ namespace RedUtils
 		/// <summary>Your car</summary>
 		public Car Me => Index < Cars.Count ? Cars.AllCars[Index] : new Car();
 
-		/// <summary>A list of all of the cars on your team (not including yourself, and including ones that are respawning)</summary>
+		/// <summary>A list of all cars on your team (not including yourself, and including ones that are respawning)</summary>
 		public List<Car> Teammates 
 		{ 
 			get 
@@ -30,7 +27,7 @@ namespace RedUtils
 				return teammates;
 			} 
 		}
-		/// <summary>A list of all of the cars on your team (not including yourself, and NOT including ones that are respawning)</summary>
+		/// <summary>A list of all cars on your team (not including yourself, and NOT including ones that are respawning)</summary>
 		public List<Car> LivingTeammates
 		{
 			get
@@ -41,9 +38,9 @@ namespace RedUtils
 			}
 		}
 
-		/// <summary>A list of all of the cars on the opposing team (including ones that are respawning)</summary>
+		/// <summary>A list of all cars on the opposing team (including ones that are respawning)</summary>
 		public List<Car> Opponents => Cars.AllCars.FindAll(car => car.Team != Team);
-		/// <summary>A list of all of the cars on the opposing team (NOT including ones that are respawning)</summary>
+		/// <summary>A list of all cars on the opposing team (NOT including ones that are respawning)</summary>
 		public List<Car> LivingOpponents => Cars.AllCars.FindAll(car => !car.IsDemolished && car.Team != Team);
 
 		/// <summary>Our team's goal</summary>
@@ -56,16 +53,16 @@ namespace RedUtils
 		/// <summary>The current score for the opposing teams</summary>
 		public int TheirScore => Game.Scores[1 - Team];
 
-		/// <summary>Whether or not it's time for kickoff</summary>
+		/// <summary>Whether it is time for kickoff</summary>
 		public bool IsKickoff { get; private set; }
 		/// <summary>The change in time since the last tick</summary>
 		public float DeltaTime { get; private set; }
 
 		/// <summary>The inputs that are returned to RLBot every tick</summary>
-		public Controller Controller = new Controller();
+		public ControllerStateT Controller;
 		/// <summary>
-		/// The action that will be executed every tick, along side the "Run" function. 
-		/// <para>Resets when the ball is touched, unless the action isn't interruptible. Otherwise only resets when the action has finished</para>
+		/// The action that will be executed every tick, alongside the "Run" function. 
+		/// <para>Resets when the ball is touched, unless the action isn't interruptible. Otherwise, only resets when the action has finished</para>
 		/// </summary>
 		public IAction Action = null;
 
@@ -76,27 +73,25 @@ namespace RedUtils
 		/// <summary>The previous moment in time. <para>Used to calculate DeltaTime</summary>
 		private float _lastTime = 0;
 
-		//a
-		public RUBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
+		protected RUBot(string defaultAgentId) : base(defaultAgentId)
 		{
-			Console.WriteLine($"RedUtils bot \"{botName}\" is up and running.");
 		}
 
 		/// <summary>Initializes some static classes using data from the packet</summary>
 		/// <param name="packet">Contains all information about the current game state</param>
-		private void GetReady(GameTickPacket packet)
+		private void GetReady(GamePacketT packet)
 		{
-			Renderer = new ExtendedRenderer(base.Renderer);
-			Field.Initialize(GetFieldInfo());
+			Renderer = new ExtendedRenderer(base.Renderer, 1920, 1080);
+			Field.Initialize(FieldInfo);
 			Cars.Initialize(packet);
 			_ready = true;
 		}
 
 		/// <summary>Processes data from the packet, and uses said data to update some static classes</summary>
 		/// <param name="packet">Contains all information about the current game state</param>
-		private void Process(GameTickPacket packet)
+		private void Process(GamePacketT packet)
 		{
-			if (Cars.Count != packet.PlayersLength)
+			if (Cars.Count != packet.Players.Count)
 			{
 				// Reinitializes the cars if someone has left or joined the game
 				Cars.Me = Me;
@@ -108,8 +103,12 @@ namespace RedUtils
 				Cars.Me = Me;
 				Cars.Update(packet);
 			}
-			// Updates the ball's position, velocity, etc
-			Ball.Update(this, packet.Ball.Value);
+
+			if (packet.Balls.Count > 0)
+			{
+				// Updates the ball's position, velocity, etc
+				Ball.Update(this, packet.Balls[0], packet.Players);
+			}
 			// Updates the game's score, time, etc
 			Game.Update(packet);
 			// Updates the boost pads
@@ -134,12 +133,12 @@ namespace RedUtils
 		/// <summary>The function that gets called every tick to get inputs from your bot</summary>
 		/// <param name="packet">Contains all information about the current game state</param>
 		/// <returns>The bot's inputs for that tick</returns>
-		public override Controller GetOutput(GameTickPacket packet)
+		public override ControllerStateT GetOutput(GamePacketT packet)
 		{
 			UpdateDeltaTime();
 			
 			// Resets the Controller every tick
-			Controller = new Controller();
+			Controller = new ControllerStateT();
 
 			try
 			{
@@ -153,7 +152,7 @@ namespace RedUtils
 				Process(packet);
 
 				// Runs our strategy code
-				Run();
+				ProcessTick();
 
 				// if there is an action to execute...
 				if (Action != null)
@@ -179,7 +178,7 @@ namespace RedUtils
 			catch (Exception e)
 			{
 				Console.WriteLine(e);
-				Controller = new Controller();
+				Controller = new ControllerStateT();
 			}
 
 			// returns our inputs to RLBot
@@ -187,9 +186,6 @@ namespace RedUtils
 		}
 
 		/// <summary>Runs every tick. Overwrite with your own strategy code!</summary>
-		public abstract void Run();
-
-		/// <summary>Gets the ball prediction struct from the framework</summary>
-		internal new BallPrediction GetBallPrediction() => new BallPrediction(base.GetBallPrediction());
+		public abstract void ProcessTick();
 	}
 }

@@ -1,0 +1,15 @@
+#:schema https://rlbot.org/schemas/agent.json
+[settings]
+agent_id = "eastvillage/phoenixcs"
+name = "Phoenix CS"
+loadout_file = "./loadout.toml"
+logo_file = "logo.png"
+run_command = "dotnet run --project Phoenix -c Release"
+
+[details]
+developer = "Eastvillage"
+description = "Phoenix, reincarnated with RedUtils! Phoenix is a 1s, 2s, and 3s bot with solid mechanics (thanks to CodeRed) and positional awareness. When developing Phoenix I try to leverage the newest advancements in the community with a focus on team play and rotations. Phoenix is an appropriate name since I am not using any of my old utils/techonlogies from previous bots."
+fun_fact = "The phoenix bird symbolizes immortality, resurrection, and life after death. In ancient Greek and Egyptian mythology, it is associated with the sun god. According to the Greeks, the bird lives in Arabia, near a cool well. Every morning at dawn, the sun god would stop his chariot to listen to the bird sing a beautiful song while it bathed in the well."
+github = "https://github.com/NicEastvillage/RLBotPhoenixCS"
+language = "C# (RedUtils)"
+tags = ["1v1", "teamplay"]

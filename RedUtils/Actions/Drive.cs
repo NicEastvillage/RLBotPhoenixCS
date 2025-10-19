@@ -187,7 +187,7 @@ namespace RedUtils
 										Action = dodge;
 									}
 								}
-								else if (bot.Me.Location.z > 100 && !bot.Me.HasDoubleJumped &&
+								else if (bot.Me.Location.z > 100 && !bot.Me.HasDoubleJumpedOrDodged &&
 								         (!bot.Me.IsGrounded || bot.Me.Velocity.Dot(Vec3.Up) < 200))
 								{
 									// If we are on the wall, or if we are falling and have a dodge, look for a wavedash

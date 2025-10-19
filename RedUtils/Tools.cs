@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Drawing;
-using System.Numerics;
 using System.Collections.Generic;
-using System.Linq;
 using Phoenix;
 using RedUtils.Math;
-using RLBotDotNet;
+using RLBot.Manager;
 
-/* 
+/*
  * This file extends the RUBot class with some extra tools that make bot creation easier.
  * You probably won't want to edit to much in here, except the ShotCheck functions.
  * You are encouraged to make your own, although feel free to continue using the default one if you like.

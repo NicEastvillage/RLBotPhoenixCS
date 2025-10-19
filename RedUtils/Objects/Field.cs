@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using rlbot.flat;
 using RedUtils.Math;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -84,31 +84,20 @@ namespace RedUtils
 		}
 
 		/// <summary>Initializes the boost pads with data from the FieldInfo struct, provided by our bot</summary>
-		public static void Initialize(FieldInfo fieldInfo)
+		public static void Initialize(FieldInfoT fieldInfo)
 		{
-			for (int i = 0; i < fieldInfo.BoostPadsLength; i++)
+			for (int i = 0; i < fieldInfo.BoostPads.Count; i++)
 			{
-				if (fieldInfo.BoostPads(i).HasValue)
-				{
-					Boosts.Add(new Boost(i, fieldInfo.BoostPads(i).Value));
-				}
-				else
-				{
-					// Sometimes the bot isn't given the boost pads initially, but we still want to initialize them all in case they become avaliable again
-					Boosts.Add(new Boost(i));
-				}
+				Boosts.Add(new Boost(i, fieldInfo.BoostPads[i]));
 			}
 		}
 
 		/// <summary>Updates the boost pads with data from the packet</summary>
-		public static void Update(GameTickPacket packet)
+		public static void Update(GamePacketT packet)
 		{
-			for (int i = 0; i < packet.BoostPadStatesLength; i++)
+			for (int i = 0; i < packet.BoostPads.Count; i++)
 			{
-				if (packet.BoostPadStates(i).HasValue)
-				{
-					Boosts[i].Update(packet.BoostPadStates(i).Value);
-				}
+					Boosts[i].Update(packet.BoostPads[i]);
 			}
 		}
 

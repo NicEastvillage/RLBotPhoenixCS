@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using rlbot.flat;
 using RedUtils.Math;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -37,22 +37,22 @@ namespace RedUtils
 		public static List<Car> LivingOrangeCars { get { return AllCars.FindAll(car => car.Team == 1 && !car.IsDemolished); } }
 
 		/// <summary>Initializes the list of cars with data from the packet</summary>
-		public static void Initialize(GameTickPacket packet)
+		public static void Initialize(GamePacketT packet)
 		{
 			AllCars = new List<Car>();
 
-			for (int i = 0; i < packet.PlayersLength; i++)
+			for (int i = 0; i < packet.Players.Count; i++)
 			{
-				AllCars.Add(new Car(i, packet.Players(i).Value));
+				AllCars.Add(new Car(i, packet.Players[i]));
 			}
 		}
 
 		/// <summary>Updates the list of cars with data from the packet</summary>
-		public static void Update(GameTickPacket packet)
+		public static void Update(GamePacketT packet)
 		{
 			foreach (Car car in AllCars)
 			{
-				car.Update(packet.Players(car.Index).Value);
+				car.Update(packet.Players[car.Index]);
 			}
 		}
 		

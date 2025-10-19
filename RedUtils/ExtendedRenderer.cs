@@ -3,75 +3,117 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.Numerics;
 using RedUtils.Math;
-using RLBotDotNet.Renderer;
+using RLBot.Flat;
+using RLBot.Manager;
+using Color = System.Drawing.Color;
+using Vector2 = System.Numerics.Vector2;
+using Vector3 = System.Numerics.Vector3;
 
 namespace RedUtils
 {
-    /// <summary>An extension of the default Renderer to draw debug lines in-game.
-    /// <para>Use `page+up` and `page+down` to enable/disable RLBot's rendering.</para>
+    /// <summary>
+    /// An extension of the default Renderer to draw debug lines in-game.
     /// </summary>
     public class ExtendedRenderer
     {
-        /// <summary>Default color.
-        /// When a draw function is called without a specific color, this color will be used. 
-        /// Useful when you want to draw multiple things in a row using the same color.
-        /// </summary>
-        public Color Color = Color.White;
         /// <summary>Reference to the default renderer</summary>
         private readonly Renderer _renderer;
+        private readonly float _screenWidth;
+        private readonly float _screenHeight;
 
-        /// <summary>Initialize an ExtendedRenderer using the given Renderer</summary>
-        public ExtendedRenderer(Renderer renderer)
+        public Color Color
+        {
+            get => _renderer.Color;
+            set => _renderer.Color = value;
+        }
+
+        /// <summary>Initialize an ExtendedRenderer.</summary>
+        public ExtendedRenderer(Renderer renderer, float screenWidth, float screenHeight)
         {
             _renderer = renderer;
+            _screenWidth = screenWidth;
+            _screenHeight = screenHeight;
         }
 
         /// <summary>Draws text in screenspace</summary>
-        public void Text2D(string text, Vec3 upperLeft, int scale = 1, Color? color = null)
+        public void Text2D(
+            string text,
+            float x,
+            float y,
+            float scale = 1f,
+            Color? foreground = null,
+            Color? background = null,
+            TextHAlign hAlign = TextHAlign.Left,
+            TextVAlign vAlign = TextVAlign.Top)
         {
-            _renderer.DrawString2D(text, color ?? Color, NumVec2(upperLeft), scale, scale);
+            _renderer.DrawText2D(text, x / _screenWidth, y / _screenHeight, scale, foreground, background, hAlign, vAlign);
         }
 
         /// <summary>Draws text at a point in world space</summary>
-        public void Text3D(string text, Vec3 pos, int scale = 1, Color? color = null)
+        public void Text3D(
+            string text,
+            RenderAnchorT anchor,
+            float scale = 1f,
+            Color? foreground = null,
+            Color? background = null,
+            TextHAlign hAlign = TextHAlign.Left,
+            TextVAlign vAlign = TextVAlign.Top)
         {
-            _renderer.DrawString3D(text, color ?? Color, NumVec(pos), scale, scale);
+            _renderer.DrawText3D(text, anchor, scale, foreground, background, hAlign, vAlign);
+        }
+        
+        /// <summary>Draws text at a point in world space</summary>
+        public void Text3D(
+            string text,
+            Vec3 pos,
+            float scale = 1f,
+            Color? foreground = null,
+            Color? background = null,
+            TextHAlign hAlign = TextHAlign.Left,
+            TextVAlign vAlign = TextVAlign.Top)
+        {
+            _renderer.DrawText3D(text, pos.ToAnchor(), scale, foreground, background, hAlign, vAlign);
         }
 
         /// <summary>Draws a rectangle at a point in world space</summary>
-        public void Rect3D(Vec3 pos, int width, int height, bool fill = true, Color? color = null)
+        public void Rect3D(
+            RenderAnchorT anchor,
+            float width,
+            float height,
+            Color? color = null)
         {
-            _renderer.DrawRectangle3D(color ?? Color, NumVec(pos), width, height, fill);
+            _renderer.DrawRect3D(anchor, width, height, color);
+        }
+        
+        /// <summary>Draws a rectangle at a point in world space</summary>
+        public void Rect3D(
+            Vec3 pos,
+            float width,
+            float height,
+            Color? color = null)
+        {
+            _renderer.DrawRect3D(pos.ToAnchor(), width, height, color);
         }
 
         /// <summary>Draws a line in world space</summary>
+        public void Line3D(RenderAnchorT start, RenderAnchorT end, Color? color = null)
+        {
+            _renderer.DrawLine3D(start, end, color);
+        }
+        
+        /// <summary>Draws a line in world space</summary>
         public void Line3D(Vec3 start, Vec3 end, Color? color = null)
         {
-            _renderer.DrawLine3D(color ?? Color, NumVec(start), NumVec(end));
-        }
-
-        /// <summary>Draws a line in screenspace</summary>
-        public void Line2D(Vec3 start, Vec3 end, Color? color = null)
-        {
-            _renderer.DrawLine2D(color ?? Color, NumVec2(start), NumVec2(end));
+            _renderer.DrawLine3D(start.ToAnchor(), end.ToAnchor(), color);
         }
 
         /// <summary>Draws a line in world space consisting between each pair of points in the given array</summary>
         public void Polyline3D(IEnumerable<Vec3> points, Color? color = null)
         {
-            _renderer.DrawPolyLine3D(color ?? Color, points.Select(NumVec).ToArray());
-        }
-
-        /// <summary>Draws a line in screen space consisting between each pair of points in the given array</summary>
-        public void Polyline2D(IEnumerable<Vec3> points, Color? color = null)
-        {
-            _renderer.DrawPolyLine2D(color ?? Color, points.Select(NumVec2).ToArray());
+            _renderer.DrawPolyLine3D(points.Select(v => v.ToFlatBuf()), color);
         }
 
         /// <summary>Draws a circle</summary>

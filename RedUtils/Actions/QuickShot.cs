@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using RedUtils.Math;
-using RLBotDotNet;
-using RLBotDotNet.Renderer;
 
 namespace RedUtils
 {

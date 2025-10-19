@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RLBot.Framework" Version="2.0.0" />
+    <PackageReference Include="RLBot.Framework" Version="3.0.0-alpha1" />
   </ItemGroup>
 
   <ItemGroup>

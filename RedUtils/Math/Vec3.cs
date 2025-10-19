@@ -1,5 +1,5 @@
 using System;
-using rlbot.flat;
+using RLBot.Flat;
 
 namespace RedUtils.Math
 {
@@ -93,15 +93,15 @@ namespace RedUtils.Math
 			y = vector.y;
 			z = vector.z;
 		}
-		/// <summary>Converts <see cref="rlbot.flat.Vector3"/> to a <see cref="Vec3"/></summary>
-		public Vec3(Vector3 vector)
+		/// <summary>Converts <see cref="RLBot.Flat.Vector3T"/> to a <see cref="Vec3"/></summary>
+		public Vec3(Vector3T vector)
 		{
 			x = vector.X;
 			y = vector.Y;
 			z = vector.Z;
 		}
-		/// <summary>Converts <see cref="rlbot.flat.Rotator"/> to a <see cref="Vec3"/></summary>
-		public Vec3(Rotator rotator)
+		/// <summary>Converts <see cref="RLBot.Flat.RotatorT"/> to a <see cref="Vec3"/></summary>
+		public Vec3(RotatorT rotator)
 		{
 			x = rotator.Pitch;
 			y = rotator.Yaw;
@@ -373,9 +373,14 @@ namespace RedUtils.Math
 			return a + t * a2b;
 		}
 		#endregion
+		
 		public override string ToString()
 		{
 			return $"({x}, {y}, {z})";
 		}
+
+		public Vector3T ToFlatBuf() => new() { X = x, Y = y, Z = z };
+
+		public RenderAnchorT ToAnchor() => new() { World = ToFlatBuf() };
 	}
 }

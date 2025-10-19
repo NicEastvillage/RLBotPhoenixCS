@@ -26,7 +26,7 @@ namespace Phoenix
 
         public bool rightHanded = true;
         
-        public PhoenixBot(string botName, int botTeam, int botIndex) : base(botName, botTeam, botIndex)
+        public PhoenixBot() : base("eastvillage/phoenixcs")
         {
             WallReflectTargetFactories = new List<ITargetFactory>
             {
@@ -52,7 +52,7 @@ namespace Phoenix
         }
 
         // Runs every tick. Should be used to find an Action to execute
-        public override void Run()
+        public override void ProcessTick()
         {
             //GameAnalysis.Update(this);
             //_boostNetwork.Draw(Renderer);
@@ -63,7 +63,7 @@ namespace Phoenix
             
             // Prints out the current action to the screen, so we know what our bot is doing
             String actionStr = Action != null ? Action.ToString()!.Substring(9) : "null";
-            Renderer.Text2D($"{Name,14}: {role}/{actionStr}", new Vec3(30, 400 + 18 * Index), 1, Color.White);
+            Renderer.Text2D($"{Name,14}: {role}/{actionStr}", 30, 400 + 18 * Index, 1, Color.White);
             Renderer.Text3D($"{role}/{actionStr}", Me.Location + Vec3.Up * 30, 1, Color.White);
             
             if (IsKickoff && Action == null)

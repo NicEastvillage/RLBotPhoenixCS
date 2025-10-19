@@ -159,11 +159,11 @@ namespace Phoenix
 
             foreach (var (spawn, options) in _kickOffOptions)
             {
-                draw.Text2D($"{spawn}:", new Vec3(x, y));
+                draw.Text2D($"{spawn}:", x, y);
                 y += dy;
                 foreach (var option in options)
                 {
-                    draw.Text2D($"{option.Name}: {option.Weight}", new Vec3(x + dx, y));
+                    draw.Text2D($"{option.Name}: {option.Weight}", x + dx, y);
                     y += dy;
                 }
             }

@@ -1,6 +1,5 @@
 ﻿using RedUtils.Math;
-using rlbot.flat;
-using System;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -53,21 +52,21 @@ namespace RedUtils
 		}
 
 		/// <summary>Updates info about the game using data from the packet</summary>
-		public static void Update(GameTickPacket packet)
+		public static void Update(GamePacketT packet)
 		{
-			Scores = new int[2] { packet.Teams(0).Value.Score, packet.Teams(1).Value.Score };
+			Scores = new int[2] { (int)packet.Teams[0].Score, (int)packet.Teams[1].Score };
 
-			Time = packet.GameInfo.Value.SecondsElapsed;
-			TimeRemaining = packet.GameInfo.Value.GameTimeRemaining;
-			GameSpeed = packet.GameInfo.Value.GameSpeed;
+			Time = packet.MatchInfo.SecondsElapsed;
+			TimeRemaining = packet.MatchInfo.GameTimeRemaining;
+			GameSpeed = packet.MatchInfo.GameSpeed;
 
-			IsUnlimitedTime = packet.GameInfo.Value.IsUnlimitedTime;
-			IsOvertime = packet.GameInfo.Value.IsOvertime;
-			IsRoundActive = packet.GameInfo.Value.IsRoundActive;
-			IsKickoffPause = packet.GameInfo.Value.IsKickoffPause;
-			IsMatchEnded = packet.GameInfo.Value.IsMatchEnded;
+			IsUnlimitedTime = packet.MatchInfo.IsUnlimitedTime;
+			IsOvertime = packet.MatchInfo.IsOvertime;
+			IsRoundActive = packet.MatchInfo.MatchPhase is MatchPhase.Active or MatchPhase.Kickoff;
+			IsKickoffPause = packet.MatchInfo.MatchPhase == MatchPhase.Kickoff; 
+			IsMatchEnded = packet.MatchInfo.MatchPhase == MatchPhase.Ended;
 
-			Gravity = new Vec3(0, 0, packet.GameInfo.Value.WorldGravityZ);
+			Gravity = new Vec3(0, 0, packet.MatchInfo.WorldGravityZ);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ﻿using System;
-using rlbot.flat;
 using RedUtils.Math;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -62,7 +62,7 @@ namespace RedUtils
 		/// <summary>The index of the team this car is on (0 for blue, 1 for orange)</summary>
 		public int Team;
 		/// <summary>How much boost the car currently has</summary>
-		public int Boost;
+		public float Boost;
 		/// <summary>If the car is controlled by a bot</summary>
 		public bool IsBot;
 		/// <summary>If all four of the car's wheels are on a surface</summary>
@@ -70,7 +70,7 @@ namespace RedUtils
 		/// <summary>If the car has executed it's first jump</summary>
 		public bool HasJumped;
 		/// <summary>If the car has executed it's second jump</summary>
-		public bool HasDoubleJumped;
+		public bool HasDoubleJumpedOrDodged;
 		/// <summary>If the car has been demolished, and hasn't respawned yet</summary>
 		public bool IsDemolished;
 		/// <summary>If the car is currently supersonic, and therefore can demolish a car</summary>
@@ -111,7 +111,7 @@ namespace RedUtils
 			IsBot = true;
 			IsGrounded = false;
 			HasJumped = false;
-			HasDoubleJumped = false;
+			HasDoubleJumpedOrDodged = false;
 			IsDemolished = false;
 			IsSupersonic = false;
 
@@ -147,7 +147,7 @@ namespace RedUtils
 			IsBot = originalCar.IsBot;
 			IsGrounded = originalCar.IsGrounded;
 			HasJumped = originalCar.HasJumped;
-			HasDoubleJumped = originalCar.HasDoubleJumped;
+			HasDoubleJumpedOrDodged = originalCar.HasDoubleJumpedOrDodged;
 			IsDemolished = originalCar.IsDemolished;
 			IsSupersonic = originalCar.IsSupersonic;
 
@@ -164,66 +164,66 @@ namespace RedUtils
 		}
 
 		/// <summary>Initializes a new car with data from the packet</summary>
-		public Car(int index, PlayerInfo playerInfo)
+		public Car(int index, PlayerInfoT playerInfo)
 		{
-			Location = playerInfo.Physics.Value.Location.HasValue ? new Vec3(playerInfo.Physics.Value.Location.Value) : Vec3.Zero;
-			Velocity = playerInfo.Physics.Value.Velocity.HasValue ? new Vec3(playerInfo.Physics.Value.Velocity.Value) : Vec3.Zero;
-			AngularVelocity = playerInfo.Physics.Value.AngularVelocity.HasValue ? new Vec3(playerInfo.Physics.Value.AngularVelocity.Value) : Vec3.Zero;
-			Rotation = playerInfo.Physics.Value.Rotation.HasValue ? new Vec3(playerInfo.Physics.Value.Rotation.Value) : Vec3.Zero;
+			Location = new Vec3(playerInfo.Physics.Location);
+			Velocity = new Vec3(playerInfo.Physics.Velocity);
+			AngularVelocity = new Vec3(playerInfo.Physics.AngularVelocity);
+			Rotation = new Vec3(playerInfo.Physics.Rotation);
 			Orientation = new Mat3x3(Rotation);
 			LocalAngularVelocity = Local(AngularVelocity);
 
 			Name = playerInfo.Name;
 			Index = index;
-			Team = playerInfo.Team;
+			Team = (int)playerInfo.Team;
 			Boost = playerInfo.Boost;
 			IsBot = playerInfo.IsBot;
-			IsGrounded = playerInfo.HasWheelContact;
-			HasJumped = playerInfo.Jumped;
-			HasDoubleJumped = playerInfo.DoubleJumped;
-			IsDemolished = playerInfo.IsDemolished;
+			IsGrounded = playerInfo.AirState == AirState.OnGround;
+			HasJumped = playerInfo.HasJumped;
+			HasDoubleJumpedOrDodged = playerInfo.HasDoubleJumped || playerInfo.HasDodged;
+			IsDemolished = playerInfo.DemolishedTimeout >= 0;
 			IsSupersonic = playerInfo.IsSupersonic;
 
-			Score = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Score : 0;
-			Goals = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Goals : 0;
-			OwnGoals = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.OwnGoals : 0;
-			Assists = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Assists : 0;
-			Saves = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Saves : 0;
-			Shots = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Shots : 0;
-			Demolitions = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Demolitions : 0;
+			Score = (int)playerInfo.ScoreInfo.Score;
+			Goals = (int)playerInfo.ScoreInfo.Goals;
+			OwnGoals = (int)playerInfo.ScoreInfo.OwnGoals;
+			Assists = (int)playerInfo.ScoreInfo.Assists;
+			Saves = (int)playerInfo.ScoreInfo.Saves;
+			Shots = (int)playerInfo.ScoreInfo.Shots;
+			Demolitions = (int)playerInfo.ScoreInfo.Demolitions;
 
-			_hitboxDimensions = playerInfo.Hitbox.HasValue ? new Vec3(playerInfo.Hitbox.Value.Length, playerInfo.Hitbox.Value.Width, playerInfo.Hitbox.Value.Height) : Vec3.Zero;
-			_hitboxOffset = playerInfo.HitboxOffset.HasValue ? new Vec3(playerInfo.HitboxOffset.Value) : Vec3.Zero;
+			_hitboxDimensions = new Vec3(playerInfo.Hitbox.Length, playerInfo.Hitbox.Width, playerInfo.Hitbox.Height);
+			_hitboxOffset = new Vec3(playerInfo.HitboxOffset);
 		}
 
 		/// <summary>Updates the car with data from the packet</summary>
-		public void Update(PlayerInfo playerInfo)
+		public void Update(PlayerInfoT playerInfo)
 		{
-			Location = playerInfo.Physics.Value.Location.HasValue ? new Vec3(playerInfo.Physics.Value.Location.Value) : Location;
-			Velocity = playerInfo.Physics.Value.Velocity.HasValue ? new Vec3(playerInfo.Physics.Value.Velocity.Value) : Velocity;
-			AngularVelocity = playerInfo.Physics.Value.AngularVelocity.HasValue ? new Vec3(playerInfo.Physics.Value.AngularVelocity.Value) : AngularVelocity;
-			Rotation = playerInfo.Physics.Value.Rotation.HasValue ? new Vec3(playerInfo.Physics.Value.Rotation.Value) : Rotation;
+			Location = new Vec3(playerInfo.Physics.Location);
+			Velocity = new Vec3(playerInfo.Physics.Velocity);
+			AngularVelocity = new Vec3(playerInfo.Physics.AngularVelocity);
+			Rotation = new Vec3(playerInfo.Physics.Rotation);
 			Orientation = new Mat3x3(Rotation);
 			LocalAngularVelocity = Local(AngularVelocity);
 
 			Boost = playerInfo.Boost;
 			IsBot = playerInfo.IsBot;
-			IsGrounded = playerInfo.HasWheelContact;
-			HasJumped = playerInfo.Jumped;
-			HasDoubleJumped = playerInfo.DoubleJumped;
-			IsDemolished = playerInfo.IsDemolished;
+			IsGrounded = playerInfo.AirState == AirState.OnGround;
+			HasJumped = playerInfo.HasJumped;
+			HasDoubleJumpedOrDodged = playerInfo.HasDoubleJumped || playerInfo.HasDodged;
+			IsDemolished = playerInfo.DemolishedTimeout >= 0;
 			IsSupersonic = playerInfo.IsSupersonic;
 
-			Score = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Score : Score;
-			Goals = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Goals : Goals;
-			OwnGoals = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.OwnGoals : OwnGoals;
-			Assists = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Assists : Assists;
-			Saves = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Saves : Saves;
-			Shots = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Shots : Shots;
-			Demolitions = playerInfo.ScoreInfo.HasValue ? playerInfo.ScoreInfo.Value.Demolitions : Demolitions;
+			Score = (int)playerInfo.ScoreInfo.Score;
+			Goals = (int)playerInfo.ScoreInfo.Goals;
+			OwnGoals = (int)playerInfo.ScoreInfo.OwnGoals;
+			Assists = (int)playerInfo.ScoreInfo.Assists;
+			Saves = (int)playerInfo.ScoreInfo.Saves;
+			Shots = (int)playerInfo.ScoreInfo.Shots;
+			Demolitions = (int)playerInfo.ScoreInfo.Demolitions;
 
-			_hitboxDimensions = playerInfo.Hitbox.HasValue ? new Vec3(playerInfo.Hitbox.Value.Length, playerInfo.Hitbox.Value.Width, playerInfo.Hitbox.Value.Height) : _hitboxDimensions;
-			_hitboxOffset = playerInfo.HitboxOffset.HasValue ? new Vec3(playerInfo.HitboxOffset.Value) : _hitboxOffset;
+			_hitboxDimensions = new Vec3(playerInfo.Hitbox.Length, playerInfo.Hitbox.Width, playerInfo.Hitbox.Height);
+			_hitboxOffset = new Vec3(playerInfo.HitboxOffset);
 		}
 
 		/// <summary>Gives the vector back in local coordinates relative to the car. 
@@ -311,7 +311,7 @@ namespace RedUtils
 				(IsGrounded ? (Up * JumpVel * time) : Vec3.Zero) +
 				Up * JumpAccel * jumpTimeRemaining * (time - 0.5f * jumpTimeRemaining) -
 				Up * StickyAccel * stickTimeRemaining * (time - 0.5f * stickTimeRemaining) +
-				(!HasDoubleJumped ? Up * JumpVel * (time - jumpTimeRemaining) : Vec3.Zero);
+				(!HasDoubleJumpedOrDodged ? Up * JumpVel * (time - jumpTimeRemaining) : Vec3.Zero);
 		}
 
 		/// <summary>Predicts the velocity of the car after jumping</summary>

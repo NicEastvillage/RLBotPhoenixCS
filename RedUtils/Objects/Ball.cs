@@ -1,6 +1,6 @@
-﻿using System;
-using rlbot.flat;
+﻿using System.Collections.Generic;
 using RedUtils.Math;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -56,13 +56,32 @@ namespace RedUtils
 		}
 
 		/// <summary>Updates the static properties with new info from the packet</summary>
-		public static void Update(RUBot bot, BallInfo ballInfo)
+		public static void Update(RUBot bot, BallInfoT ballInfo, List<PlayerInfoT> players)
 		{
-			Location = ballInfo.Physics.Value.Location.HasValue ? new Vec3(ballInfo.Physics.Value.Location.Value) : Location;
-			Velocity = ballInfo.Physics.Value.Velocity.HasValue ? new Vec3(ballInfo.Physics.Value.Velocity.Value) : Velocity;
-			AngularVelocity = ballInfo.Physics.Value.AngularVelocity.HasValue ? new Vec3(ballInfo.Physics.Value.AngularVelocity.Value) : AngularVelocity;
-			LatestTouch = ballInfo.LatestTouch.HasValue ? new BallTouch(ballInfo.LatestTouch.Value) : null;
-			Prediction = bot.GetBallPrediction();
+			Location = new Vec3(ballInfo.Physics.Location);
+			Velocity = new Vec3(ballInfo.Physics.Velocity);
+			AngularVelocity = new Vec3(ballInfo.Physics.AngularVelocity);
+			Prediction = new BallPrediction(bot.BallPrediction);
+
+			PlayerInfoT latestToucher = null;
+			int index = 0;
+			for (var i = 0; i < players.Count; i++)
+			{
+				var player = players[i];
+				if (player.LatestTouch != null && player.LatestTouch.BallIndex == 0)
+				{
+					if (latestToucher == null || player.LatestTouch.GameSeconds > latestToucher.LatestTouch.GameSeconds)
+					{
+						latestToucher = player;
+						index = i;
+					}
+				}
+			}
+
+			if (latestToucher != null)
+			{
+				LatestTouch = new BallTouch(latestToucher.LatestTouch, index, (int)latestToucher.Team);
+			}
 		}
 
 		/// <summary>Predicts the state of this ball instance. Note that this ignores walls and cars</summary>

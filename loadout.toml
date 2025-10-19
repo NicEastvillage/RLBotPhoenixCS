@@ -1,4 +1,4 @@
-[Bot Loadout]
+[blue_loadout]
 # Primary Color selection
 team_color_id = 19
 # Secondary Color selection
@@ -25,12 +25,27 @@ engine_audio_id = 0
 trails_id = 1898
 # Goal Explosion Selection
 goal_explosion_id = 1908
-# Finds the closest primary color swatch based on the provided RGB value like [34, 255, 60]
-primary_color_lookup = None
-# Finds the closest secondary color swatch based on the provided RGB value like [34, 255, 60]
-secondary_color_lookup = None
 
-[Bot Loadout Orange]
+[blue_loadout.paint]
+# car_paint_id
+car_paint_id = 12
+# decal_paint_id
+decal_paint_id = 0
+# wheels_paint_id
+wheels_paint_id = 12
+# boost_paint_id
+boost_paint_id = 12
+# antenna_paint_id
+antenna_paint_id = 0
+# hat_paint_id
+hat_paint_id = 0
+# trails_paint_id
+trails_paint_id = 8
+# goal_explosion_paint_id
+goal_explosion_paint_id = 12
+
+
+[orange_loadout]
 # Primary Color selection
 team_color_id = 35
 # Secondary Color selection
@@ -57,30 +72,8 @@ engine_audio_id = 0
 trails_id = 1898
 # Goal Explosion Selection
 goal_explosion_id = 1908
-# Finds the closest primary color swatch based on the provided RGB value like [34, 255, 60]
-primary_color_lookup = None
-# Finds the closest secondary color swatch based on the provided RGB value like [34, 255, 60]
-secondary_color_lookup = None
 
-[Bot Paint Blue]
-# car_paint_id
-car_paint_id = 12
-# decal_paint_id
-decal_paint_id = 0
-# wheels_paint_id
-wheels_paint_id = 12
-# boost_paint_id
-boost_paint_id = 12
-# antenna_paint_id
-antenna_paint_id = 0
-# hat_paint_id
-hat_paint_id = 0
-# trails_paint_id
-trails_paint_id = 8
-# goal_explosion_paint_id
-goal_explosion_paint_id = 12
-
-[Bot Paint Orange]
+[orange_loadout.paint]
 # car_paint_id
 car_paint_id = 12
 # decal_paint_id
@@ -97,4 +90,3 @@ hat_paint_id = 0
 trails_paint_id = 10
 # goal_explosion_paint_id
 goal_explosion_paint_id = 12
-

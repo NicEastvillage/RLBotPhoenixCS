@@ -1,6 +1,6 @@
-﻿using rlbot.flat;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using RLBot.Flat;
 
 namespace RedUtils
 {
@@ -17,11 +17,11 @@ namespace RedUtils
         public BallSlice[] Slices;
         public int Length => Slices?.Length ?? 0;
 
-        public BallPrediction(rlbot.flat.BallPrediction ballPrediction)
+        public BallPrediction(BallPredictionT ballPrediction)
         {
-            Slices = new BallSlice[ballPrediction.SlicesLength];
-            for (int i = 0; i < ballPrediction.SlicesLength; i++)
-                Slices[i] = new BallSlice(ballPrediction.Slices(i).Value);
+            Slices = new BallSlice[ballPrediction.Slices.Count];
+            for (int i = 0; i < ballPrediction.Slices.Count; i++)
+                Slices[i] = new BallSlice(ballPrediction.Slices[i]);
         }
 
         /// <summary>Finds the first ball slice that fits the given predicate 
