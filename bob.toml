@@ -1,8 +1,8 @@
 [[config]]
-project_name = "PheonixCS"
+project_name = "PhoenixCS"
 bot_configs = ["phoenix.bot.toml"]
 
 [config.builder_config]
 builder_type = "csharp"
-base_dir = "Pheonix"
+base_dir = "Phoenix"
 
